@@ -1,0 +1,12 @@
+# 개인 보관 파일
+*.zip
+
+# 편집기·OS
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Claude 로컬 설정
+.claude/
