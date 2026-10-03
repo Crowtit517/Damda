@@ -39,6 +39,7 @@ export const onStatus = fn => { listeners.add(fn); return () => listeners.delete
 
 function setStatus(phase, message = '') {
   status = { phase, message };
+  if (phase === 'need-login') armAutoRelogin();
   listeners.forEach(fn => { try { fn(getStatus()); } catch (e) { console.error(e); } });
 }
 function saveState() { savePref(STATE_KEY, state); }
@@ -141,10 +142,38 @@ export function setSyncMode(mode) {
   startSync();
 }
 
+// ---- 로그인 만료 → 다음 터치에서 자동으로 다시 받기 ----
+// 브라우저는 사용자가 누른 직후에만 로그인 창을 열 수 있다. 그래서 만료되면 '다음 클릭'을 기다렸다가
+// 조용히 다시 받는다 (계정 선택·비밀번호 없이, 창이 잠깐 깜빡임). 실패하면 이번 실행에서는 다시 시도하지 않고
+// [다시 로그인] 버튼으로 맡긴다.
+let autoArmed = false;
+let autoGaveUp = false;
+
+function armAutoRelogin() {
+  if (autoArmed || autoGaveUp || !isConnected() || syncMode() === 'local') return;
+  autoArmed = true;
+  adapters.google.loadGis?.().catch(() => {});
+  document.addEventListener('click', onNextClick, { capture: true, once: true });
+}
+
+async function onNextClick(e) {
+  autoArmed = false;
+  // 직접 누른 연결 버튼은 그 버튼이 처리한다
+  if (e.target.closest?.('[data-act="google-reconnect"], [data-act="google-disconnect"], [data-act="google-connect"]')) return;
+  if (adapters.google.hasToken() || !isConnected()) return;
+  try {
+    await reconnectGoogle();
+  } catch {
+    autoGaveUp = true;
+    setStatus('need-login', '다시 로그인하면 이어서 맞춰요');
+  }
+}
+
 // ---- 연결 · 끊기 ----
 export async function connectGoogle() {
   const { google } = adapters;
   await google.signIn(account()?.email || '');
+  autoGaveUp = false;
   const email = await google.fetchEmail().catch(() => '');
   savePref(ACCOUNT_KEY, { email, connectedAt: Date.now() });
   if (syncMode() === 'local') savePref(MODE_KEY, 'auto'); // 처음 연결하면 추천 방식으로
@@ -156,6 +185,7 @@ export async function connectGoogle() {
 /** 로그인만 다시 (만료됐을 때). 계정은 그대로 */
 export async function reconnectGoogle() {
   await adapters.google.signIn(account()?.email || '');
+  autoGaveUp = false;
   startSync();
 }
 

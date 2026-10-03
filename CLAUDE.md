@@ -7,7 +7,7 @@
 - **단순하고 가볍게**: 프레임워크·빌드 도구·npm 의존성 없이 순수 HTML/CSS/JS(ES Modules)로 작성한다.
 - 외부 스크립트는 Google Identity Services 하나만 허용한다 (Phase 3부터). 폰트는 Google Fonts.
 - 원본 달빛달력은 https://github.com/Crowtit517/moonlight_calendar 에서 본다 (로컬 사본은 지웠다).
-- 레포: https://github.com/Crowtit517/Damda (공개, 10-04 첫 커밋). 사용자가 요청할 때만 커밋·푸시한다.
+- 레포: https://github.com/Crowtit517/damdanote (공개, 10-04 첫 커밋). 사용자가 요청할 때만 커밋·푸시한다.
 - 모든 저장/읽기는 `try/catch`로 감싸고, 저장이 실패해도 화면은 정상 렌더링한다.
 - 데이터 항목에는 항상 `updatedAt`, `deleted`를 둔다 (실제 삭제 대신 `deleted: true`).
 - 은행, 카드, 결제 연동 코드는 어떤 형태로도 추가하지 않는다.

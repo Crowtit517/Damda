@@ -12,7 +12,7 @@
 | 갤럭시 | GitHub **Releases**에서 설치 파일(APK) 내려받아 설치 | 무료 |
 | 동기화 | 각자의 구글 계정 (드라이브·캘린더). **우리가 운영하는 서버 없음** | 무료 |
 
-- 레포: https://github.com/Crowtit517/Damda (아직 올리지 않음)
+- 레포: https://github.com/Crowtit517/damdanote (공개, 10-04 첫 커밋. 10-04 Damda → damdanote 로 이름 변경)
 - APK 직접 설치는 "출처를 알 수 없는 앱" 경고가 한 번 뜬다. 본인이 만든 앱이라 위험하진 않지만 남에게 나눠주기엔 불편하다.
 - 갤럭시 앱 만들기: Capacitor + Android Studio (둘 다 무료, PC에 수 GB 설치). 화면·기능은 웹에서 불러오면 자동 최신, 안드로이드 부분(알림·로그인)을 바꿀 때만 다시 설치.
 
