@@ -10,6 +10,8 @@
 ![Server](https://img.shields.io/badge/서버-없음-e8708a)
 ![Deps](https://img.shields.io/badge/npm_의존성-0개-f0a33a)
 
+### 👉 [바로 써보기: crowtit517.github.io/damdanote](https://crowtit517.github.io/damdanote/)
+
 <img src="docs/images/01-calendar.png" alt="담다 PC 화면: 캘린더와 하루 패널" width="860">
 
 </div>
@@ -86,7 +88,10 @@
 
 ## 3. 사용 방법
 
-### 바로 실행 (PC)
+### 인터넷에서 바로 쓰기
+**https://crowtit517.github.io/damdanote/** 를 열면 됩니다. PC 크롬은 주소창의 **설치** 아이콘, 폰 크롬은 **⋮ → 앱 설치(홈 화면에 추가)**로 앱처럼 쓸 수 있습니다.
+
+### 내 PC에서 실행 (개발용)
 빌드 과정이 없습니다. 폴더에서 아래 한 줄이면 됩니다.
 
 ```bash
@@ -185,7 +190,7 @@ flowchart LR
 | 단계 | 내용 | 상태 |
 |---|---|---|
 | Phase 1 | 화면과 기능: 캘린더 · 할 일 · 가계부 · 카테고리 · 반복 · PWA | ✅ 완료 |
-| Phase 2 | 레포 · 웹 주소(GitHub Pages) | 🔄 레포 공개 |
+| Phase 2 | 레포 · 웹 주소(GitHub Pages) | ✅ [crowtit517.github.io/damdanote](https://crowtit517.github.io/damdanote/) |
 | Phase 3 | 구글 드라이브 동기화 | 🔄 **실제 구글 연결·두 브라우저 동기화 성공** · IndexedDB 전환 예정 |
 | Phase 4 | 구글 캘린더 연동(삼성 캘린더 일정과 주고받기) + PC 알림 | ⬜ |
 | Phase 5 | 갤럭시 앱(APK 직접 설치, 무료) + 폰 알림 | ⬜ |

@@ -1173,3 +1173,13 @@ button.sync-pill:hover { background: var(--surface-hover); }
 .money-toggle .switch::after { width: 14px; height: 14px; }
 .money-toggle .switch.on::after { transform: translateX(14px); }
 .ledger-mini.hidden-money { display: flex; justify-content: space-between; align-items: center; }
+
+/* ---- 폰 위쪽 줄: 제목은 줄지 않고, 동기화 표시가 대신 줄어든다 (PC는 그대로) ---- */
+@media (max-width: 479px) {
+  .app-head { gap: 6px; }
+  .app-head .screen-title { white-space: nowrap; flex: 1 0 auto; }
+  .app-head .sync-pill { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; }
+  .app-head .sync-pill > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+  .app-head .sync-pill .sync-dot { flex-shrink: 0; }
+  .pill-sub, .pill-pre { display: none; }
+}

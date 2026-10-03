@@ -112,15 +112,19 @@ function renderSyncPill() {
   const st = sync.getStatus();
   let state = 'local';
   let text = '이 기기에 저장';
+  let sub = ''; // 좁은 화면에서는 숨기는 덧붙임 (예: "· 3분 전")
   if (mode !== 'local' && !sync.isConnected()) { state = 'waiting'; text = '구글 연결 대기'; }
   else if (mode !== 'local') {
     if (st.phase === 'syncing') { state = 'syncing'; text = '맞추는 중…'; }
     else if (st.phase === 'need-login') { state = 'waiting'; text = '다시 로그인 필요'; }
     else if (st.phase === 'error') { state = 'error'; text = '동기화 오류'; }
-    else { state = 'on'; text = st.lastSync ? `동기화됨 · ${ago(st.lastSync)}` : '동기화 켜짐'; }
+    else { state = 'on'; text = st.lastSync ? '동기화됨' : '동기화 켜짐'; sub = st.lastSync ? ` · ${ago(st.lastSync)}` : ''; }
   }
   syncPill.dataset.state = state;
-  syncPill.lastElementChild.textContent = text;
+  // 좁은 화면에서는 앞말을 빼고 짧게: "구글 연결 대기" → "연결 대기"
+  const SHORT_PREFIX = { '구글 연결 대기': '구글 ', '다시 로그인 필요': '다시 ', '이 기기에 저장': '이 ' };
+  const pre = SHORT_PREFIX[text] || '';
+  syncPill.lastElementChild.innerHTML = `${pre ? `<span class="pill-pre">${pre}</span>` : ''}${escapeHtml(text.slice(pre.length))}${sub ? `<span class="pill-sub">${escapeHtml(sub)}</span>` : ''}`;
 }
 
 function syncCardHtml() {
