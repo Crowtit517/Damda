@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>개인정보처리방침 · 담다</title>
+<link rel="icon" href="icons/icon-192.png" />
+<style>
+  :root { color-scheme: light dark; --bg: #f4f5fb; --card: #fff; --text: #23263a; --soft: #5d6178; --accent: #5a63c4; --line: #e3e5f0; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0e1018; --card: #171a26; --text: #eceef5; --soft: #a3a8bf; --accent: #9aa3ff; --line: #2a2e40; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.7 'Noto Sans KR', 'Malgun Gothic', system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 18px 56px; }
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  header img { width: 52px; height: 52px; border-radius: 14px; }
+  h1 { margin: 0; font-size: 26px; } .sub { margin: 2px 0 0; color: var(--soft); font-size: 14px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 22px; margin: 14px 0; }
+  h2 { margin: 0 0 8px; font-size: 18px; }
+  ul { margin: 6px 0; padding-left: 20px; } li { margin: 4px 0; }
+  a { color: var(--accent); }
+  .en { color: var(--soft); font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; } td, th { border-top: 1px solid var(--line); padding: 8px 6px; text-align: left; vertical-align: top; }
+  th { width: 34%; font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="icons/icon-192.png" alt="" />
+    <div><h1>담다 개인정보처리방침</h1><p class="sub">Damda Privacy Policy · 시행일 2026년 10월 5일</p></div>
+  </header>
+
+  <section>
+    <h2>한 줄 요약</h2>
+    <p><strong>담다는 운영 서버가 없습니다.</strong> 기록은 사용자의 기기와 사용자 본인의 구글 계정(구글 드라이브의 앱 전용 숨김 폴더, 구글 캘린더)에만 저장되며, 개발자는 사용자의 기록을 받거나 보관하거나 볼 수 없습니다.</p>
+    <p class="en">Damda has no server. Your data stays on your device and in your own Google account (an app-only hidden folder in Google Drive, and Google Calendar). The developer never receives, stores, or sees your data.</p>
+  </section>
+
+  <section>
+    <h2>1. 담다가 다루는 정보</h2>
+    <table>
+      <tr><th>사용자가 적는 기록</th><td>일정, 할 일, 가계부(금액·날짜·메모·카테고리), 설정. 은행·카드 정보는 다루지 않으며 금융 연동 기능이 없습니다.</td></tr>
+      <tr><th>구글 계정 이메일</th><td>어느 계정에 연결됐는지 화면에 보여 주기 위해서만 씁니다.</td></tr>
+      <tr><th>수집하지 않는 것</th><td>위치, 연락처, 광고 식별자, 사용 통계, 오류 보고 등. 광고와 분석 도구를 쓰지 않습니다.</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>2. 저장하는 곳</h2>
+    <ul>
+      <li><strong>사용자의 기기</strong>: 브라우저 저장소(IndexedDB) 또는 앱 저장소. 인터넷이 없어도 쓸 수 있게 먼저 기기에 저장합니다.</li>
+      <li><strong>사용자의 구글 드라이브</strong>(구글 계정을 연결한 경우): 담다 전용 숨김 폴더(<code>appDataFolder</code>)의 파일 하나. 사용자의 다른 드라이브 파일은 볼 수 없습니다.</li>
+      <li><strong>사용자의 구글 캘린더</strong>(연결한 경우): 일정만 주고받습니다. 할 일과 가계부는 캘린더에 올리지 않습니다.</li>
+      <li>PC 앱은 다시 로그인하지 않도록 구글 로그인 권한을 <strong>Windows 암호화</strong>로 그 PC에만 보관합니다. 갤럭시 앱은 구글 플레이 서비스가 관리합니다.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3. 구글 사용자 데이터 사용</h2>
+    <p>담다가 요청하는 권한과 쓰는 곳은 아래뿐입니다.</p>
+    <table>
+      <tr><th>drive.appdata</th><td>여러 기기의 할 일·가계부를 맞추기 위해 담다 전용 숨김 폴더에 기록 파일을 읽고 씁니다.</td></tr>
+      <tr><th>calendar.readonly · calendar.events</th><td>사용자의 캘린더 일정을 담다 달력에 보여 주고, 담다에서 추가·수정·삭제한 일정을 사용자의 구글 캘린더에 반영합니다.</td></tr>
+      <tr><th>userinfo.email</th><td>연결된 계정 이메일을 화면에 보여 줍니다.</td></tr>
+    </table>
+    <p>담다의 구글 API 정보 사용 및 다른 앱으로의 전송은 <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API 서비스 사용자 데이터 정책</a>(제한적 사용 요건 포함)을 따릅니다. 구글 사용자 데이터를 개발자나 제3자에게 보내지 않고, 판매하지 않으며, 광고나 사람의 열람에 쓰지 않습니다.</p>
+    <p class="en">Damda's use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements. Google user data is never sent to the developer or any third party, never sold, and never used for advertising.</p>
+  </section>
+
+  <section>
+    <h2>4. 공유와 보관 기간</h2>
+    <ul>
+      <li>담다는 사용자의 정보를 누구와도 공유하지 않습니다. 기록은 사용자 기기와 구글(구글의 개인정보처리방침에 따름) 사이에서만 오갑니다.</li>
+      <li>보관 기간은 사용자가 정합니다. 기기 기록은 앱을 지우거나 브라우저 데이터를 지우면 사라지고, 드라이브의 담다 파일은 구글 드라이브 설정 → 앱 관리에서 지울 수 있습니다.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5. 연결 끊기와 권한 회수</h2>
+    <ul>
+      <li>담다의 ☰ 메뉴 → 설정 → <strong>구글 연결 끊기</strong>를 누르면 이 기기의 연결이 끊기고, 앱이 보관한 로그인 권한을 지우며 구글에 권한을 돌려줍니다.</li>
+      <li>언제든 <a href="https://myaccount.google.com/permissions">구글 계정 → 서드파티 앱 및 서비스</a>에서 담다의 접근 권한을 직접 회수할 수 있습니다.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6. 문의</h2>
+    <p>궁금한 점은 <a href="https://github.com/Crowtit517/damdanote/issues">GitHub 이슈</a>로 남겨 주세요. 이 방침이 바뀌면 이 페이지에 시행일과 함께 알립니다.</p>
+    <p><a href="./">← 담다로 돌아가기</a></p>
+  </section>
+</main>
+</body>
+</html>
