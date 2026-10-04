@@ -2,7 +2,7 @@
 // 할 일은 체크만 하는 목록, 가계부는 요약만 보여주고 누르면 각 탭의 그 날짜로 넘어간다 (패널은 가볍게).
 import { store } from '../store.js';
 import { openOverlay, closeOverlay, isOpen } from '../ui/overlay.js';
-import { removeWithUndo } from '../ui/toast.js';
+import { removeWithUndo, toast } from '../ui/toast.js';
 import { dateNavHtml, bindDateNav } from '../parts/dateNav.js';
 import { renderTasks, categoryCardsHtml, progressOf } from '../parts/taskList.js';
 import { tasksOn } from '../taskRepeat.js';
@@ -11,14 +11,17 @@ import { onlyExpenses, entryType } from '../ledgerMath.js';
 import { categoryById } from '../categories.js';
 import { getSetting } from '../settings.js';
 import * as gcal from '../sync/gcal.js';
+import { eventFormHtml, bindEventForm, readEventForm } from '../parts/eventForm.js';
+import { openEventEditor } from '../parts/eventEditor.js';
 import {
   addDays, daysBetween, escapeHtml, formatTime, formatWon, sumAmounts,
-  EVENT_COLORS, safeColor, isValidKey, loadPref, savePref,
+  safeColor, isValidKey, loadPref, savePref,
 } from '../utils.js';
 
 const SECTIONS_KEY = 'ple-panel-sections';
 const el = document.getElementById('dayPanel');
 let key = null;
+let shownEvents = []; // 지금 패널에 보이는 일정 (누르면 고치기 창)
 
 el.innerHTML = `
   <div class="sheet-handle" aria-hidden="true"><i></i></div>
@@ -131,57 +134,46 @@ function renderLedgerSummary(entries, spent, earned) {
 }
 
 function renderEvents(events) {
+  shownEvents = events;
   const list = events.length
     ? `<ul class="event-list">${events.map(e => {
         const total = daysBetween(e.start, e.end) + 1;
         const nth = daysBetween(e.start, key) + 1;
         const when = `${formatTime(e.time)}${e.endTime && e.endTime !== e.time && total === 1 ? ` ~ ${formatTime(e.endTime)}` : ''}${total > 1 ? ` · ${nth}일차 / ${total}일` : ''}`;
-        if (e.source === 'google') {
-          return `
-          <li class="event g-event" title="구글 캘린더 · ${escapeHtml(e.calName)}">
-            <i class="event-dot" style="background:${safeColor(e.color)}"></i>
-            <div class="event-main">
-              <div class="event-title">${escapeHtml(e.title)}</div>
-              <div class="muted small">${when}${e.recurring ? ' · 반복' : ''} · ${escapeHtml(e.calName)}</div>
-            </div>
-            ${e.link ? `<a class="g-open" href="${escapeHtml(e.link)}" target="_blank" rel="noopener noreferrer" aria-label="구글 캘린더에서 열기" title="구글 캘린더에서 열기">G</a>` : '<span class="g-open" aria-hidden="true">G</span>'}
-          </li>`;
-        }
+        const google = e.source === 'google';
+        const editable = !google || e.writable;
+        const sub = google ? `${when}${e.recurring ? ' · 반복' : ''}${e.writable ? '' : ' · 보기만'} · ${escapeHtml(e.calName)}${e.pending ? ' · 올리는 중' : ''}` : when;
         return `
-          <li class="event" data-id="${escapeHtml(e.id)}">
+          <li class="event${google ? ' g-event' : ''}${editable ? ' editable' : ''}" data-ev="${escapeHtml(e.id)}"${google ? ` title="구글 캘린더 · ${escapeHtml(e.calName)}"` : ''}>
             <i class="event-dot" style="background:${safeColor(e.color)}"></i>
             <div class="event-main">
               <div class="event-title">${escapeHtml(e.title)}</div>
-              <div class="muted small">${when}</div>
+              <div class="muted small">${sub}</div>
             </div>
-            <button type="button" class="del-btn" data-act="delete-event" aria-label="삭제">✕</button>
+            ${google ? (e.link ? `<a class="g-open" href="${escapeHtml(e.link)}" target="_blank" rel="noopener noreferrer" aria-label="구글 캘린더에서 열기" title="구글 캘린더에서 열기">G</a>` : '<span class="g-open" aria-hidden="true">G</span>') : ''}
+            ${editable ? '<button type="button" class="del-btn" data-act="delete-event" aria-label="삭제">✕</button>' : ''}
           </li>`;
       }).join('')}</ul>`
     : '<p class="empty">일정이 없어요.</p>';
 
-  eventsSlot.innerHTML = `
-    ${list}
-    <details class="event-add">
+  const t = gcal.canWrite() ? gcal.target() : null;
+  const note = t
+    ? `구글 캘린더 · ${escapeHtml(t.name)}에 저장돼요. 폰 캘린더에도 보여요 (바꾸기: ☰ 메뉴)`
+    : gcal.isEnabled() ? '구글 캘린더에 저장하려면 ☰ 메뉴에서 일정 수정 권한을 허락해 주세요. 지금은 담다에만 저장돼요' : '';
+  // 목록만 새로 그리고, 입력 중인 "일정 추가" 칸은 날짜나 저장 위치가 바뀔 때만 다시 만든다
+  if (!eventsSlot.querySelector('.events-list')) eventsSlot.innerHTML = '<div class="events-list"></div><div class="events-add"></div>';
+  eventsSlot.querySelector('.events-list').innerHTML = list;
+  const sig = `${key}|${t ? `${t.acct}|${t.id}` : 'local'}|${gcal.isEnabled()}`;
+  const addSlot = eventsSlot.querySelector('.events-add');
+  if (addSlot.dataset.sig === sig) return;
+  const wasOpen = addSlot.querySelector('.event-add')?.open;
+  addSlot.dataset.sig = sig;
+  addSlot.innerHTML = `
+    <details class="event-add"${wasOpen ? ' open' : ''}>
       <summary>＋ 일정 추가</summary>
-      <form class="event-form">
-        <input name="title" type="text" maxlength="80" placeholder="무슨 일이 있나요?" required />
-        <div class="form-row">
-          <label>시작 <input name="start" type="date" value="${key}" required /></label>
-          <label>종료 <input name="end" type="date" value="${key}" required /></label>
-        </div>
-        <div class="form-row">
-          <label>시간 <input name="time" type="time" /></label>
-          <span class="muted small">비우면 종일</span>
-        </div>
-        <div class="color-row" role="radiogroup" aria-label="색상">
-          ${EVENT_COLORS.map((c, i) => `
-            <label class="color-swatch" style="--sw:${c.hex}" title="${c.label}">
-              <input type="radio" name="color" value="${c.hex}"${i === 0 ? ' checked' : ''} aria-label="${c.label}" />
-            </label>`).join('')}
-        </div>
-        <button class="primary-btn wide">담아두기</button>
-      </form>
+      <form class="event-form">${eventFormHtml({ dayKey: key, google: !!t, calColor: t?.color, note })}</form>
     </details>`;
+  bindEventForm(addSlot.querySelector('.event-form'));
 }
 
 // ---- 이벤트 연결 ----
@@ -192,21 +184,34 @@ el.addEventListener('click', e => {
   if (e.target.closest('[data-close]')) return closeOverlay(el);
   const go = e.target.closest('[data-goto]');
   if (go) return window.dispatchEvent(new CustomEvent('ple:goto', { detail: { tab: go.dataset.goto, key } }));
+  const row = e.target.closest('.event[data-ev]');
+  if (!row || e.target.closest('a')) return;
+  const ev = shownEvents.find(x => x.id === row.dataset.ev);
+  if (!ev) return;
   if (e.target.closest('[data-act="delete-event"]')) {
-    removeWithUndo('events', e.target.closest('.event').dataset.id, '일정을 삭제했어요');
+    if (ev.source === 'google') {
+      try { toast('일정을 지웠어요', { label: '되돌리기', run: gcal.deleteEvent(ev) }, 8000); } catch (err) { toast(err.message); }
+    } else removeWithUndo('events', ev.id, '일정을 지웠어요');
+    return;
   }
+  if (ev.source !== 'google' || ev.writable) openEventEditor(ev);
 });
 
-eventsSlot.addEventListener('submit', e => {
+eventsSlot.addEventListener('submit', async e => {
   if (!e.target.matches('.event-form')) return;
   e.preventDefault();
-  const f = new FormData(e.target);
-  const title = String(f.get('title') || '').trim();
-  let start = String(f.get('start'));
-  let end = String(f.get('end'));
-  if (!title || !isValidKey(start)) return;
-  if (!isValidKey(end) || end < start) end = start;
-  store.put('events', { title, start, end, time: String(f.get('time') || ''), color: safeColor(f.get('color')) });
+  const input = readEventForm(e.target);
+  if (!input.title || !isValidKey(input.start)) return;
+  if (!isValidKey(input.end)) input.end = input.start;
+  e.target.querySelector('[name="title"]').value = '';
+  if (gcal.canWrite()) {
+    try {
+      const t = await gcal.createEvent(input);
+      toast(`구글 캘린더 · ${t.name}에 담았어요`);
+    } catch (err) { toast(err.message); }
+    return;
+  }
+  store.put('events', { title: input.title, start: input.start, end: input.end, time: input.time, color: safeColor(input.color) });
 });
 
 // ---- 모바일: 손잡이를 아래로 끌어 닫기 ----

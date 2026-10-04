@@ -1198,3 +1198,17 @@ button.sync-pill:hover { background: var(--surface-hover); }
   font-size: 13px; font-weight: 700; color: #4285f4; background: var(--surface); text-decoration: none;
 }
 a.g-open:hover { background: var(--surface-hover); }
+
+/* ---- 구글 캘린더: 계정별 묶음 · 저장 위치 · 고칠 수 있는 일정 ---- */
+.gcal-acct { display: flex; flex-direction: column; gap: 6px; }
+.gcal-acct-head { display: flex; align-items: center; gap: 6px; padding: 0 2px; }
+.gcal-acct-name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.gcal-acct-name strong { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gcal-target { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-soft); }
+.gcal-target select { min-height: 38px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); padding: 0 8px; font: inherit; font-size: 14px; }
+.event.editable { cursor: pointer; }
+.event.editable:hover { background: var(--surface-hover); }
+.event-form .form-line { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.event-form .form-line select { flex: 1; min-height: 38px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); padding: 0 8px; font: inherit; }
+.event-note { margin: 0; line-height: 1.5; }
+.color-row { flex-wrap: wrap; }

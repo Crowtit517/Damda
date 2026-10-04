@@ -10,6 +10,8 @@ const BASE_SCOPES = [
   'https://www.googleapis.com/auth/userinfo.email',
 ];
 export const CAL_READ = 'https://www.googleapis.com/auth/calendar.readonly';
+export const CAL_WRITE = 'https://www.googleapis.com/auth/calendar.events';
+export const CAL_SCOPES = [CAL_READ, CAL_WRITE];
 
 const TOKEN_KEY = 'ple-gtoken';
 const EXTRA_KEY = 'ple-gscopes'; // 사용자가 켠 추가 권한 목록
@@ -69,28 +71,36 @@ export function loadGis() {
   return gisLoading;
 }
 
-/** 로그인 창을 띄워 토큰을 받는다. 버튼을 누른 직후(사용자 동작 안)에서 불러야 팝업이 막히지 않는다 */
-export async function signIn(hintEmail = '') {
+const popupError = e => new Error(e?.type === 'popup_closed' ? '로그인 창이 닫혔어요.' : e?.type === 'popup_failed_to_open' ? '로그인 창이 막혔어요. 팝업을 허용해주세요.' : '구글 로그인을 하지 못했어요.');
+
+/** 토큰 하나 받기 (기본 계정·추가 계정 공용). 버튼을 누른 직후(사용자 동작 안)에서 불러야 팝업이 막히지 않는다 */
+export async function requestToken({ scopes, hint = '', prompt = '' }) {
   if (!isConfigured()) throw new Error('구글 연결 설정(클라이언트 ID)이 아직 없어요.');
   await loadGis();
   return new Promise((resolve, reject) => {
     const client = window.google.accounts.oauth2.initTokenClient({
       client_id: GOOGLE_CLIENT_ID,
-      scope: [...BASE_SCOPES, ...extraScopes()].join(' '),
+      scope: scopes.join(' '),
       include_granted_scopes: true,
       callback: r => {
         if (r.error) return reject(new Error('구글 로그인을 하지 못했어요.'));
-        token = r.access_token;
-        grantedScope = r.scope || '';
-        tokenExp = Date.now() + (Number(r.expires_in || 3600) - 60) * 1000;
-        keepToken();
-        window.dispatchEvent(new Event('ple:google-signin'));
-        resolve(token);
+        resolve({ token: r.access_token, exp: Date.now() + (Number(r.expires_in || 3600) - 60) * 1000, scope: r.scope || '' });
       },
-      error_callback: e => reject(new Error(e?.type === 'popup_closed' ? '로그인 창이 닫혔어요.' : e?.type === 'popup_failed_to_open' ? '로그인 창이 막혔어요. 팝업을 허용해주세요.' : '구글 로그인을 하지 못했어요.')),
+      error_callback: e => reject(popupError(e)),
     });
-    client.requestAccessToken({ prompt: '', login_hint: hintEmail || undefined });
+    client.requestAccessToken({ prompt, login_hint: hint || undefined });
   });
+}
+
+/** 기본 계정(드라이브 동기화 계정) 로그인 */
+export async function signIn(hintEmail = '') {
+  const t = await requestToken({ scopes: [...BASE_SCOPES, ...extraScopes()], hint: hintEmail });
+  token = t.token;
+  tokenExp = t.exp;
+  grantedScope = t.scope;
+  keepToken();
+  window.dispatchEvent(new Event('ple:google-signin'));
+  return token;
 }
 
 export function getToken() {
