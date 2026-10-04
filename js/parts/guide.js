@@ -25,7 +25,7 @@ const ring = (x, y, w, h) => `
 // 지금 화면의 테마 버튼 모양 (밝은 화면 ☀️ / 어두운 화면 🌙)
 const themeIcon = () => document.getElementById('themeToggle')?.textContent.trim() || '☀️';
 
-function header(title = '📅 캘린더', pill = '이 기기에 저장', dot = 'dot-wait') {
+function header(title = '캘린더', pill = '이 기기에 저장', dot = 'dot-wait') {
   return `
     ${rect(0, 0, 300, 34, 0, 'card')}<path d="M0 34.5H300" class="p-hair"/>
     <path d="M12 12h14M12 17h14M12 22h14" class="p-stroke"/>
@@ -87,7 +87,7 @@ const SCENES = {
     ${taskRow(100, '숙제하기', true)}${taskRow(128, '줄넘기 100번', false)}
     ${rect(12, 156, 276, 18, 8, 'soft')}${text(20, 168, '💰 오늘 쓴 돈  3,000원', 'tx', 8.5)}`,
 
-  tasks: hl => `${header('✅ 할 일')}
+  tasks: hl => `${header('할 일')}
     ${text(150, 52, '‹   오늘 · 10월 4일   ›', 'tx', 10, 'middle', 700)}
     ${rect(12, 62, 158, 26, 9, 'card-line')}${text(22, 79, '새로운 할 일', 'faint', 9)}
     ${rect(176, 62, 56, 26, 9, 'dash')}${text(204, 79, '반복', 'mu', 8.5, 'middle')}
@@ -96,7 +96,7 @@ const SCENES = {
     ${taskRow(132, '💊 약 먹기', false, text(92, 147, '매일 · 🔥 5일 연속', 'mu', 8))}
     ${hl}`,
 
-  ledger: hl => `${header('💰 가계부')}
+  ledger: hl => `${header('가계부')}
     ${rect(12, 44, 96, 24, 9, 'soft')}${rect(15, 47, 45, 18, 7, 'card')}${text(37, 59.5, '지출', 'tx', 8.5, 'middle', 700)}${text(84, 59.5, '수입', 'mu', 8.5, 'middle')}
     ${rect(114, 44, 80, 24, 9, 'card-line')}${text(186, 60, '3,000원', 'tx', 9, 'end', 700)}
     ${rect(200, 44, 88, 24, 9, 'card-line')}${text(208, 60, '떡볶이', 'tx', 9)}
@@ -111,7 +111,7 @@ const SCENES = {
 
   category: (hl, opts = {}) => {
     const c = chips(51, [['공부', 'c1'], ['운동', 'c2'], ['집안일', 'c3']]);
-    return `${header('✅ 할 일')}
+    return `${header('할 일')}
       ${text(14, 46, opts.edit ? '정리하는 중… (살랑살랑)' : '카테고리', 'mu', 8)}
       <g class="${opts.edit ? 'p-wiggle' : ''}">${c.svg}</g>
       ${opts.x ? `${circle(44, 52, 6, 'xbtn')}${text(44, 55, '×', 'on', 8, 'middle', 700)}` : ''}
@@ -134,7 +134,7 @@ const SCENES = {
       ${rect(10, 50, 156, 34, 10, 'soft')}${text(20, 71, '📳 진동', 'tx', 9.5, 'start', 700)}${rect(132, 59, 26, 16, 8, 'acf')}${circle(150, 67, 6, 'knob')}
       ${rect(10, 88, 156, 34, 10, 'soft')}${text(20, 109, '🔔 알림', 'tx', 9.5, 'start', 700)}${rect(132, 97, 26, 16, 8, 'acf')}${circle(150, 105, 6, 'knob')}` : `
       ${text(14, 44, '화면', 'mu', 8)}
-      ${['📅 캘린더', '✅ 할 일', '💰 가계부'].map((s, i) => `${rect(10, 50 + i * 24, 156, 20, 7, i === 0 ? 'acs' : 'card')}${text(20, 64 + i * 24, s, 'tx', 9)}`).join('')}
+      ${['캘린더', '할 일', '가계부'].map((s, i) => `${rect(10, 50 + i * 24, 156, 20, 7, i === 0 ? 'acs' : 'card')}${text(20, 64 + i * 24, s, 'tx', 9)}`).join('')}
       ${text(14, 130, '동기화', 'mu', 8)}
       ${rect(10, 136, 156, 28, 9, 'card-line')}${circle(26, 150, 8, 'gmark')}${text(26, 153, 'G', 'on', 9, 'middle', 700)}${text(40, 154, '구글 계정으로 연결', 'tx', 9, 'start', 700)}`}
     ${hl}`,

@@ -7,6 +7,7 @@ import { onlyExpenses } from '../ledgerMath.js';
 import { tasksOn } from '../taskRepeat.js';
 import { getSetting, setSetting } from '../settings.js';
 import { toast } from '../ui/toast.js';
+import * as gcal from '../sync/gcal.js';
 
 const el = document.getElementById('view-calendar');
 const picker = document.getElementById('monthPicker');
@@ -38,11 +39,12 @@ export function render() {
   const startOffset = new Date(viewYear, viewMonth, 1).getDay();
 
   const showMoney = getSetting('money');
+  gcal.setViewMonth(viewYear, viewMonth);
   let cells = '';
   for (let i = 0; i < 42; i++) {
     const date = new Date(viewYear, viewMonth, 1 - startOffset + i);
     const key = toKey(date.getFullYear(), date.getMonth(), date.getDate());
-    const events = store.eventsOn(key);
+    const events = [...store.eventsOn(key), ...gcal.eventsOn(key)];
     const tasks = tasksOn(key);
     const spent = showMoney ? sumAmounts(onlyExpenses(store.byDate('expenses', key))) : 0;
     const cls = [

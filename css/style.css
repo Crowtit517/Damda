@@ -1183,3 +1183,18 @@ button.sync-pill:hover { background: var(--surface-hover); }
   .app-head .sync-pill .sync-dot { flex-shrink: 0; }
   .pill-sub, .pill-pre { display: none; }
 }
+
+/* ---- 구글 캘린더 (보기만) ---- */
+.g-mark.cal { background: var(--surface); font-size: 14px; }
+.gcal-note { margin: 0; line-height: 1.6; }
+.gcal-note b { color: var(--text); }
+.gcal-list { display: flex; flex-direction: column; gap: 2px; background: var(--card); border-radius: 12px; padding: 4px; }
+.gcal-row { padding: 7px 8px; }
+.gcal-row .side-text strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.gcal-color { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; margin: 0 4px; }
+.g-event { background: var(--card); border: 1px solid var(--line); }
+.g-open {
+  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #4285f4; background: var(--surface); text-decoration: none;
+}
+a.g-open:hover { background: var(--surface-hover); }

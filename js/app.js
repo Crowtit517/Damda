@@ -7,6 +7,7 @@ import { closeOverlay, toggleOverlay, closeOnBackdrop, topOverlay, isOpen } from
 import { toast } from './ui/toast.js';
 import { choiceDialog } from './ui/dialog.js';
 import * as sync from './sync/engine.js';
+import * as gcal from './sync/gcal.js';
 import { isConfigured } from './sync/google.js';
 import { getSetting, setSetting, isTouchDevice, buzz } from './settings.js';
 import * as calendar from './views/calendar.js';
@@ -28,9 +29,9 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) reco
 
 // ---- 화면 (☰ 메뉴에서 고른다. 제목에 지금 화면을 표시) ----
 const SCREENS = {
-  calendar: { icon: '📅', label: '캘린더', desc: '한 달 훑어보기', view: calendar },
-  tasks: { icon: '✅', label: '할 일', desc: '오늘 할 일과 반복', view: tasks },
-  ledger: { icon: '💰', label: '가계부', desc: '지출·수입과 통계', view: ledger },
+  calendar: { label: '캘린더', desc: '한 달 훑어보기', view: calendar },
+  tasks: { label: '할 일', desc: '오늘 할 일과 반복', view: tasks },
+  ledger: { label: '가계부', desc: '지출·수입과 통계', view: ledger },
 };
 const titleEl = document.getElementById('screenTitle');
 // 앱 아이콘 바로가기(?tab=tasks)로 열면 그 화면부터
@@ -42,7 +43,7 @@ function showTab(next) {
   savePref('ple-tab', tab);
   for (const name of Object.keys(SCREENS)) document.getElementById(`view-${name}`).hidden = name !== tab;
   const s = SCREENS[tab];
-  titleEl.innerHTML = `<span class="screen-icon" aria-hidden="true">${s.icon}</span>${s.label}`;
+  titleEl.textContent = s.label;
   document.title = `${s.label} · 담다`;
   if (tab !== 'calendar' && dayPanel.isPanelOpen()) closeOverlay(document.getElementById('dayPanel'));
   s.view.render();
@@ -187,6 +188,47 @@ function settingsHtml() {
     </div>`;
 }
 
+// ☰ 메뉴: 구글 캘린더 (보기만, Phase 4-1)
+function gcalCardHtml() {
+  if (!sync.account()) {
+    return '<div class="sync-card"><p class="muted small gcal-note">구글 계정을 먼저 연결하면, 삼성·구글·노션 캘린더에 있는 일정을 담다 달력에서 함께 볼 수 있어요.</p></div>';
+  }
+  if (!gcal.isEnabled()) {
+    return `
+      <div class="sync-card">
+        <button type="button" class="google-btn" data-act="gcal-connect"><span class="g-mark cal" aria-hidden="true">📅</span> 구글 캘린더 연결</button>
+        <p class="muted small gcal-note">폰 캘린더(구글 계정에 저장된 일정)가 담다 달력에 함께 보여요. 지금은 <b>보기만</b> 하고, 일정을 바꾸지 않아요.</p>
+      </div>`;
+  }
+  const st = gcal.getStatus();
+  const cals = gcal.calendars();
+  let line;
+  if (st.phase === 'loading') line = '<span class="sync-dot"></span>일정을 불러오는 중…';
+  else if (st.phase === 'need-login') line = '<span class="sync-dot warn"></span>구글 로그인이 끝나면 일정을 불러와요';
+  else if (st.phase === 'need-scope') line = '<span class="sync-dot warn"></span>캘린더 보기 권한이 없어요';
+  else if (st.phase === 'error') line = `<span class="sync-dot err"></span>${escapeHtml(st.message)}`;
+  else line = `<span class="sync-dot ok"></span>${st.lastFetch ? `${ago(st.lastFetch)} 불러옴` : '연결됨'} · 보기만`;
+  return `
+    <div class="sync-card">
+      <div class="sync-status">${line}</div>
+      ${st.phase === 'need-scope' ? '<button type="button" class="google-btn" data-act="gcal-connect"><span class="g-mark cal" aria-hidden="true">📅</span> 다시 연결 (캘린더 보기 체크)</button>' : ''}
+      ${cals.length ? `
+        <div class="gcal-list" role="group" aria-label="보여줄 캘린더">
+          ${cals.map(c => `
+            <button type="button" class="set-row gcal-row" data-gcal-cal="${escapeHtml(c.id)}" role="switch" aria-checked="${c.visible}">
+              <i class="gcal-color" style="background:${escapeHtml(c.color)}" aria-hidden="true"></i>
+              <span class="side-text"><strong>${escapeHtml(c.name)}</strong>${c.primary ? '<span class="muted small">기본 캘린더</span>' : ''}</span>
+              <span class="switch${c.visible ? ' on' : ''}" aria-hidden="true"></span>
+            </button>`).join('')}
+        </div>` : ''}
+      <div class="google-actions">
+        <button type="button" class="pill-btn" data-act="gcal-refresh"${st.phase === 'loading' ? ' disabled' : ''}>지금 불러오기</button>
+        <button type="button" class="pill-btn danger-text" data-act="gcal-disconnect">캘린더 연결 끊기</button>
+      </div>
+      <p class="muted small sync-foot">구글 계정에 저장된 일정만 보여요. 삼성 캘린더에서 "내 휴대전화"·"삼성 계정"에 저장한 일정은 보이지 않아요.</p>
+    </div>`;
+}
+
 function renderMenu() {
   menu.innerHTML = `
     <div class="modal-box side">
@@ -201,12 +243,13 @@ function renderMenu() {
       <nav class="side-nav" aria-label="화면 선택">
         ${Object.entries(SCREENS).map(([key, s]) => `
           <button type="button" class="side-item${key === tab ? ' on' : ''}" data-screen="${key}" aria-current="${key === tab ? 'page' : 'false'}">
-            <span class="side-icon" aria-hidden="true">${s.icon}</span>
             <span class="side-text"><strong>${s.label}</strong><span class="muted small">${s.desc}</span></span>
           </button>`).join('')}
       </nav>
       <div class="side-label">동기화</div>
       <div class="sync-slot">${syncCardHtml()}</div>
+      <div class="side-label">구글 캘린더</div>
+      <div class="gcal-slot">${gcalCardHtml()}</div>
       <div class="side-label">설정</div>
       ${settingsHtml()}
     </div>`;
@@ -216,6 +259,15 @@ sync.onStatus(() => {
   renderSyncPill();
   const slot = menu.querySelector('.sync-slot');
   if (slot && isOpen(menu)) slot.innerHTML = syncCardHtml();
+  const cal = menu.querySelector('.gcal-slot');
+  if (cal && isOpen(menu)) cal.innerHTML = gcalCardHtml();
+});
+// 구글 캘린더 일정이 바뀌면 달력·날짜 패널·메뉴를 다시 그린다
+gcal.subscribe(() => {
+  SCREENS[tab].view.render();
+  dayPanel.render();
+  const cal = menu.querySelector('.gcal-slot');
+  if (cal && isOpen(menu)) cal.innerHTML = gcalCardHtml();
 });
 setInterval(renderSyncPill, 30 * 1000); // "3분 전" 같은 표시 갱신
 
@@ -240,6 +292,8 @@ menu.addEventListener('click', async e => {
     set.querySelector('.switch').classList.toggle('on', on);
     return;
   }
+  const calRow = e.target.closest('[data-gcal-cal]');
+  if (calRow) { gcal.toggleCalendar(calRow.dataset.gcalCal); return; }
   const m = e.target.closest('[data-mode]');
   if (m) { sync.setSyncMode(m.dataset.mode); renderMenu(); renderSyncPill(); return; }
 
@@ -253,6 +307,21 @@ menu.addEventListener('click', async e => {
     }
     if (act === 'google-reconnect') { await sync.reconnectGoogle(); toast('다시 로그인했어요'); }
     if (act === 'sync-now') await sync.syncNow();
+    if (act === 'gcal-connect') {
+      const n = await gcal.connectCalendar(sync.account()?.email || '');
+      toast(`📅 구글 캘린더 ${n}개를 연결했어요`);
+    }
+    if (act === 'gcal-refresh') await gcal.refresh();
+    if (act === 'gcal-disconnect') {
+      const v = await choiceDialog({
+        title: '구글 캘린더 연결 끊기',
+        message: '담다에서 구글 캘린더 일정이 보이지 않게 돼요. 구글 캘린더의 일정은 그대로예요.',
+        choices: [{ label: '연결 끊기', value: 'yes', danger: true }],
+      });
+      if (v !== 'yes') return;
+      await gcal.disconnectCalendar();
+      toast('구글 캘린더 연결을 끊었어요');
+    }
     if (act === 'google-disconnect') {
       const v = await choiceDialog({
         title: '구글 연결 끊기',
@@ -261,6 +330,7 @@ menu.addEventListener('click', async e => {
       });
       if (v !== 'yes') return;
       sync.disconnectGoogle();
+      await gcal.disconnectCalendar();
       toast('구글 연결을 끊었어요');
     }
   } catch (err) {

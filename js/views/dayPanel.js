@@ -10,6 +10,7 @@ import { bindCategoryLongPress } from '../parts/categoryUI.js';
 import { onlyExpenses, entryType } from '../ledgerMath.js';
 import { categoryById } from '../categories.js';
 import { getSetting } from '../settings.js';
+import * as gcal from '../sync/gcal.js';
 import {
   addDays, daysBetween, escapeHtml, formatTime, formatWon, sumAmounts,
   EVENT_COLORS, safeColor, isValidKey, loadPref, savePref,
@@ -76,7 +77,7 @@ export function render() {
   const entries = store.byDate('expenses', key).sort((a, b) => a.createdAt - b.createdAt);
   const spent = sumAmounts(onlyExpenses(entries));
   const earned = sumAmounts(entries.filter(e => entryType(e) === 'income'));
-  const events = store.eventsOn(key).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  const events = [...store.eventsOn(key), ...gcal.eventsOn(key)].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
 
   navSlot.innerHTML = dateNavHtml(key);
   summarySlot.innerHTML = `
@@ -134,12 +135,24 @@ function renderEvents(events) {
     ? `<ul class="event-list">${events.map(e => {
         const total = daysBetween(e.start, e.end) + 1;
         const nth = daysBetween(e.start, key) + 1;
+        const when = `${formatTime(e.time)}${e.endTime && e.endTime !== e.time && total === 1 ? ` ~ ${formatTime(e.endTime)}` : ''}${total > 1 ? ` · ${nth}일차 / ${total}일` : ''}`;
+        if (e.source === 'google') {
+          return `
+          <li class="event g-event" title="구글 캘린더 · ${escapeHtml(e.calName)}">
+            <i class="event-dot" style="background:${safeColor(e.color)}"></i>
+            <div class="event-main">
+              <div class="event-title">${escapeHtml(e.title)}</div>
+              <div class="muted small">${when}${e.recurring ? ' · 반복' : ''} · ${escapeHtml(e.calName)}</div>
+            </div>
+            ${e.link ? `<a class="g-open" href="${escapeHtml(e.link)}" target="_blank" rel="noopener noreferrer" aria-label="구글 캘린더에서 열기" title="구글 캘린더에서 열기">G</a>` : '<span class="g-open" aria-hidden="true">G</span>'}
+          </li>`;
+        }
         return `
           <li class="event" data-id="${escapeHtml(e.id)}">
             <i class="event-dot" style="background:${safeColor(e.color)}"></i>
             <div class="event-main">
               <div class="event-title">${escapeHtml(e.title)}</div>
-              <div class="muted small">${formatTime(e.time)}${total > 1 ? ` · ${nth}일차 / ${total}일` : ''}</div>
+              <div class="muted small">${when}</div>
             </div>
             <button type="button" class="del-btn" data-act="delete-event" aria-label="삭제">✕</button>
           </li>`;

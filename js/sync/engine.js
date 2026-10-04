@@ -159,7 +159,7 @@ function armAutoRelogin() {
 async function onNextClick(e) {
   autoArmed = false;
   // 직접 누른 연결 버튼은 그 버튼이 처리한다
-  if (e.target.closest?.('[data-act="google-reconnect"], [data-act="google-disconnect"], [data-act="google-connect"]')) return;
+  if (e.target.closest?.('[data-act="google-reconnect"], [data-act="google-disconnect"], [data-act="google-connect"], [data-act="gcal-connect"]')) return;
   if (adapters.google.hasToken() || !isConnected()) return;
   try {
     await reconnectGoogle();
