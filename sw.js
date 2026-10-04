@@ -1,6 +1,6 @@
 // 서비스 워커: 앱 파일을 저장해 두고 인터넷이 없어도 열리게 한다.
 // 같은 출처 파일은 '네트워크 먼저'(항상 최신, 실패 시 저장본), 폰트는 '저장본 먼저'.
-const CACHE = 'damda-shell-v33';
+const CACHE = 'damda-shell-v34';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/style.css',
   './js/app.js', './js/config.js', './js/settings.js', './js/sync/google.js', './js/sync/drive.js', './js/sync/engine.js', './js/sync/gcal.js', './js/store.js', './js/db.js', './js/utils.js', './js/categories.js', './js/ledgerMath.js', './js/sample.js', './js/recurring.js', './js/taskRepeat.js', './js/desk.js',

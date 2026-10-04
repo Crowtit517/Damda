@@ -17,6 +17,8 @@
     "files": [
       "main.js",
       "preload.js",
+      "oauth.local.json",
+      "googleAuth.js",
       "widget.html",
       "splash.html",
       "build/icon.png",

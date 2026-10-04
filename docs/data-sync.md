@@ -194,4 +194,4 @@
 - PC 앱은 공개 사이트(`crowtit517.github.io/damdanote`)를 연다 → 저장소는 그 주소 것(크롬과 따로). 처음엔 비어 있고, 구글 계정을 연결하면 드라이브에서 불러온다
 - 위젯은 같은 주소 아래(`__damda_widget.html`, desktop/widget.html을 PC 앱이 끼워 줌)라 **같은 IndexedDB**를 쓴다 → 위젯에서 고치면 담다에 바로(BroadcastChannel)
 - X를 누르면: 입력칸에 쓰던 글자를 `ple-desk-drafts`에 → 기기 저장 마무리(pagehide) → 연결돼 있으면 드라이브 올리기(최대 3초, 못 올리면 다음에 열 때) → 담다·위젯 끝내기. 다음에 열면 쓰던 글자를 한 번 채우고 지운다
-- 구글 로그인은 앱 안 창에서. 앱 안 브라우저를 막는 구글 정책을 피하려고 브라우저 이름에서 Electron 표시를 뺀다. 그 밖의 링크는 기본 브라우저로
+- 구글 로그인은 **기본 브라우저**에서 (앱 안 로그인은 구글이 막는다): 구글 '데스크톱 앱' 클라이언트 + PKCE, `http://127.0.0.1:임시포트`로 돌아온다(`desktop/googleAuth.js`). 다시 받기 권한은 Windows 암호화(safeStorage/DPAPI)로 `%APPDATA%\Damda\google-accounts.json`에 계정별로 보관 → 다음부터 창 없이 새 토큰, 기본 계정은 만료 5분 전에 미리. 웹 코드는 `requestToken()` 한 곳만 PC 앱이면 `window.desk.googleToken`으로 바꾼다. 조용히 못 받으면(`silent`) 브라우저를 열지 않고 [다시 로그인]으로. 계정 빼기·연결 끊기 = 보관 삭제 + 구글에 권한 돌려줌. 그 밖의 링크도 기본 브라우저로

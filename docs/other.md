@@ -74,6 +74,7 @@
 - 코드: `desktop/` (Electron). 웹 담다는 그대로 npm 없이, 이 폴더만 `npm install`
   - 개발: `cd desktop` → `npm install` → `npm run dev` (담다 폴더를 localhost:5500으로 띄워서 연다)
   - 설치 파일 만들기: `npm run build` → `desktop/dist/Damda-Setup.exe` (약 106MB). 한 번 실행하면 바로 설치되고(`AppData\Local\Programs`), 바탕화면·시작 메뉴에 **"담다" 바로가기**만 생긴다(.exe가 보이지 않음). 지우기는 Windows 설정 → 앱. 만든 파일은 git에 올리지 않는다
+- **PC 앱 구글 로그인 설정** (한 번, 사용자가 직접): 구글 클라우드 콘솔 → 사용자 인증 정보 → OAuth 클라이언트 ID 만들기 → 유형 **데스크톱 앱** → JSON 다운로드 → 이름을 `oauth.local.json`으로 바꿔 `desktop/`에 넣고 `npm run build`. git에는 올리지 않는다(.gitignore). 구글은 데스크톱 앱의 보안 비밀은 비밀로 보지 않고 앱 안에 넣어 쓰라고 안내한다 → 설치 파일 안에 들어간다
 - 서명하지 않은 exe라 처음 실행 때 Windows가 "알 수 없는 게시자" 경고를 띄운다 → [추가 정보] → [실행]. 무료 범위에서는 그대로 둔다
 - 다른 사람에게는 설치 파일 하나만 주면 된다 (화면은 공개 사이트에서 받으므로, 사이트를 고치면 exe를 다시 만들지 않아도 최신)
 - 시작 화면: PC 앱은 `desktop/splash.html`, 폰(홈 화면 앱)은 `js/ui/bootSplash.js`. 처음 만든 시험판은 `test/splash-demo/`(`시작 화면 보기.bat`)

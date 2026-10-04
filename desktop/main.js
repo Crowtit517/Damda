@@ -2,10 +2,11 @@
 // - 공개 사이트(GitHub Pages)를 그대로 연다 → 사이트를 고치면 PC 앱도 저절로 최신. 한 번 열면 서비스 워커 덕분에 인터넷 없이도 열린다.
 // - 담다 화면은 window.desk 가 있으면 PC 화면으로 바뀐다 (js/desk.js). 폰·웹은 영향 없음.
 // - 개발할 때: npm run dev → 담다 폴더를 http://localhost:5500 으로 띄워서 연다.
-const { app, BrowserWindow, Notification, nativeImage, ipcMain, net, session, screen, globalShortcut, shell } = require('electron');
+const { app, BrowserWindow, Menu, Notification, nativeImage, ipcMain, net, session, screen, globalShortcut, shell } = require('electron');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const googleAuth = require('./googleAuth.js'); // 구글 로그인은 기본 브라우저에서 (앱 안 로그인은 구글이 막는다)
 
 const DEV = process.argv.includes('--dev');
 const BASE = DEV ? 'http://localhost:5500/' : 'https://crowtit517.github.io/damdanote/';
@@ -24,8 +25,6 @@ if (!app.requestSingleInstanceLock()) app.quit();
 app.on('second-instance', () => showMain());
 // Windows 알림: 설치 전(개발 중)에는 실행 파일 경로를 ID로 써야 알림이 뜬다
 app.setAppUserModelId(app.isPackaged ? 'io.github.crowtit517.damda' : process.execPath);
-// 구글은 앱 안 브라우저(Electron) 표시가 있으면 로그인을 막기도 해서, 브라우저 이름에서 앱·Electron 표시를 뺀다
-app.userAgentFallback = app.userAgentFallback.replace(/ Electron\/\S+/, '').replace(/ [^ ]*damda[^ ]*\/\S+/i, '').replace(/ 담다\/\S+/, '');
 
 // ---- 위젯 상태 기억 (보기, 보기별 위치·크기) ----
 const STATE_FILE = () => path.join(app.getPath('userData'), 'widget.json');
@@ -162,9 +161,8 @@ function createMain() {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true },
   });
   mainWin.loadURL(BASE);
-  // 구글 로그인 창은 앱 안에서 열고, 그 밖의 링크(구글 캘린더에서 열기 등)는 기본 브라우저로
+  // 링크(구글 캘린더에서 열기 등)는 앱 안에 창을 띄우지 않고 기본 브라우저로
   mainWin.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https:\/\/accounts\.google\.com\//.test(url)) return { action: 'allow' };
     if (/^https?:\/\//.test(url)) shell.openExternal(url);
     return { action: 'deny' };
   });
@@ -215,6 +213,9 @@ function notify(title, body) {
 
 ipcMain.on('notify', (_e, { title, body }) => notify(title, body));
 ipcMain.on('open-widget', () => openWidget());
+// 구글 토큰: 보관된 권한으로 조용히, 없으면 브라우저 로그인 → 끝나면 담다 창을 앞으로
+ipcMain.handle('google-token', (_e, opts) => googleAuth.getToken(opts, () => showMain()));
+ipcMain.handle('google-forget', (_e, email) => googleAuth.forget(email || ''));
 ipcMain.on('title-bar', (_e, { color, symbolColor }) => {
   try { mainWin?.setTitleBarOverlay({ color, symbolColor, height: BAR_H }); mainWin?.setBackgroundColor(color); } catch {}
 });
@@ -232,6 +233,7 @@ ipcMain.on('widget', (_e, act, val) => {
 });
 
 app.whenReady().then(async () => {
+  Menu.setApplicationMenu(null); // 모든 창에서 기본 메뉴줄(File · Edit · View · Window)을 없앤다
   loadState();
   // 위젯 페이지는 desktop/widget.html 을 담다 주소 아래에 끼워서 준다. 나머지는 그대로 보낸다
   const scheme = new URL(BASE).protocol.replace(':', '');

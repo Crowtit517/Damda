@@ -10,6 +10,7 @@
 import { store, dataPlace } from '../store.js';
 import * as googleApi from './google.js';
 import * as driveApi from './drive.js';
+import { isDesk } from '../desk.js';
 import { loadPref, savePref } from '../utils.js';
 
 const MODE_KEY = 'ple-sync-mode';
@@ -152,6 +153,16 @@ let autoGaveUp = false;
 function armAutoRelogin() {
   if (autoArmed || autoGaveUp || !isConnected()) return;
   autoArmed = true;
+  // PC 앱: 클릭을 기다리지 않고 창 없이 바로 다시 받는다. 안 되면 [다시 로그인] 버튼에 맡긴다 (브라우저는 열지 않음)
+  if (isDesk) {
+    setTimeout(async () => {
+      autoArmed = false;
+      if ((adapters.google.hasDriveToken ? adapters.google.hasDriveToken() : adapters.google.hasToken()) || !isConnected()) return;
+      try { await reconnectGoogle({ silent: true }); }
+      catch { autoGaveUp = true; setStatus('need-login', '다시 로그인하면 이어서 맞춰요'); }
+    }, 0);
+    return;
+  }
   adapters.google.loadGis?.().catch(() => {});
   document.addEventListener('click', onNextClick, { capture: true, once: true });
 }
@@ -182,11 +193,11 @@ export async function connectGoogle() {
 }
 
 /** 로그인만 다시 (만료됐을 때). 계정은 그대로 */
-export async function reconnectGoogle() {
+export async function reconnectGoogle(opts = {}) {
   // 할 일·가계부 담는 곳이 추가 계정이면 그 계정으로 다시 로그인
-  const other = adapters.google.driveRelogin?.();
+  const other = adapters.google.driveRelogin?.(opts);
   if (other) await other;
-  else await adapters.google.signIn(account()?.email || '');
+  else await adapters.google.signIn(account()?.email || '', opts);
   autoGaveUp = false;
   startSync();
 }

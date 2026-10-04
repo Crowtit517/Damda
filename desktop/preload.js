@@ -8,6 +8,9 @@ contextBridge.exposeInMainWorld('desk', {
   notify: (title, body) => ipcRenderer.send('notify', { title, body }),
   widget: (act, val) => ipcRenderer.send('widget', act, val),
   onView: fn => ipcRenderer.on('view', (_e, view) => fn(view)),
+  // 구글 로그인 (js/sync/google.js 가 PC 앱이면 이쪽을 쓴다)
+  googleToken: opts => ipcRenderer.invoke('google-token', opts).catch(e => { throw new Error(String(e.message).replace(/^Error invoking remote method '[^']+': (Error: )?/, '')); }),
+  googleForget: email => ipcRenderer.invoke('google-forget', email || '').catch(() => {}),
 });
 
 const isWidget = location.pathname.endsWith('__damda_widget.html');

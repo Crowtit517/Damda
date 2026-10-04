@@ -10,6 +10,7 @@
 // - 반복 일정, 공휴일, 남이 공유한 캘린더처럼 수정 권한이 없는 일정은 보기만 한다.
 // - 계정: 기본 계정(드라이브 동기화 계정) + 캘린더만 보는 추가 구글 계정 여러 개.
 import * as google from './google.js';
+import { isDesk } from '../desk.js';
 import { store, dataPlace } from '../store.js';
 import { findFile, create as createDriveFile } from './drive.js';
 import { getMeta, setMeta } from '../db.js';
@@ -593,8 +594,8 @@ export async function addAccount() {
 const scopesFor = email => [...google.CAL_SCOPES, ...(email === dataPlace() ? [google.DRIVE_SCOPE] : [])];
 
 /** 추가 계정 다시 로그인 (만료됐을 때). 버튼을 누른 직후에 불러야 한다 */
-export async function reloginAccount(email) {
-  const t = await google.requestToken({ scopes: scopesFor(email), hint: email });
+export async function reloginAccount(email, { silent = false } = {}) {
+  const t = await google.requestToken({ scopes: scopesFor(email), hint: email, silent });
   const x = extras();
   x[email] = t;
   savePref(EXTRA_KEY, x);
@@ -619,6 +620,7 @@ export async function copyRecordsTo(token) {
 export async function removeAccount(email) {
   const x = extras();
   try { if (x[email]?.token) window.google?.accounts?.oauth2?.revoke(x[email].token, () => {}); } catch {}
+  google.forgetAccount(email);
   delete x[email];
   savePref(EXTRA_KEY, x);
   delete cache.accounts[email];
@@ -646,6 +648,14 @@ function armRelogin() {
   if (armed || !isEnabled()) return;
   if (!accounts().some(a => !a.main && !tokenOf(a.key))) return;
   armed = true;
+  // PC 앱: 클릭을 기다리지 않고 창 없이 바로 다시 받는다 (안 되면 [다시 로그인]에 맡긴다)
+  if (isDesk) {
+    setTimeout(async () => {
+      armed = false;
+      for (const acc of accounts().filter(a => !a.main && !tokenOf(a.key))) { try { await reloginAccount(acc.email, { silent: true }); } catch {} }
+    }, 0);
+    return;
+  }
   google.loadGis().catch(() => {});
   document.addEventListener('click', async e => {
     armed = false;
@@ -662,7 +672,7 @@ if (dataPlace()) {
   google.setDriveProvider({
     get: () => { const t = tokenOf(place); return t && (t.scope || '').split(' ').includes(google.DRIVE_SCOPE) ? t.token : null; },
     invalidate: () => { const x = extras(); if (x[place]) { x[place] = { ...x[place], exp: 0 }; savePref(EXTRA_KEY, x); } },
-    relogin: () => reloginAccount(place),
+    relogin: opts => reloginAccount(place, opts),
   });
 }
 
