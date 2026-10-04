@@ -1213,3 +1213,15 @@ a.g-open:hover { background: var(--surface-hover); }
 .event-note { margin: 0; line-height: 1.5; }
 .color-row { flex-wrap: wrap; }
 a.pill-btn { text-decoration: none; color: var(--text); }
+
+/* ---- 메뉴 정리 (10-05): 절약 모드, 접히는 계정, 담는 곳 ---- */
+.sync-desc { margin: 0; line-height: 1.5; }
+.sync-card .set-row { background: var(--card); border-radius: 12px; }
+.acct-toggle {
+  display: flex; align-items: center; justify-content: space-between; width: 100%;
+  border: 1px dashed var(--line); background: transparent; color: var(--text-soft); border-radius: 10px; padding: 8px 12px; font-size: 13px;
+}
+.acct-toggle:hover { background: var(--surface-hover); }
+.set-select { display: flex; flex-direction: column; gap: 6px; padding: 8px; }
+.set-select select { min-height: 40px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); padding: 0 8px; font: inherit; font-size: 14px; }
+.set-card > .pill-btn.wide { margin: 6px 8px 8px; width: calc(100% - 16px); }

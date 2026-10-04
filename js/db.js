@@ -2,7 +2,9 @@
 // 항목 하나 = 레코드 하나 ({ key: '컬렉션/아이디', c, item }). 바뀐 항목만 골라 저장한다.
 // 외부 라이브러리 없이 브라우저 기본 기능만 쓴다.
 
-const DB_NAME = 'damda';
+// 할 일·가계부를 담는 곳(계정)마다 데이터베이스를 따로 쓴다 ('' = 처음 연결한 기본 계정)
+const PLACE = (() => { try { return JSON.parse(localStorage.getItem('ple-data-acct')) || ''; } catch { return ''; } })();
+const DB_NAME = PLACE ? `damda:${PLACE}` : 'damda';
 const DB_VERSION = 1;
 const ITEMS = 'items';
 const META = 'meta';

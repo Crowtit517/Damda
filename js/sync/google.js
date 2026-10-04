@@ -12,6 +12,7 @@ const BASE_SCOPES = [
 export const CAL_READ = 'https://www.googleapis.com/auth/calendar.readonly';
 export const CAL_WRITE = 'https://www.googleapis.com/auth/calendar.events';
 export const CAL_SCOPES = [CAL_READ, CAL_WRITE];
+export const DRIVE_SCOPE = BASE_SCOPES[0];
 
 const TOKEN_KEY = 'ple-gtoken';
 const EXTRA_KEY = 'ple-gscopes'; // 사용자가 켠 추가 권한 목록
@@ -102,6 +103,23 @@ export async function signIn(hintEmail = '') {
   window.dispatchEvent(new Event('ple:google-signin'));
   return token;
 }
+
+// 할 일·가계부를 담는 곳이 추가 계정이면, 드라이브는 그 계정의 토큰을 쓴다 (gcal.js가 정해 준다)
+let driveProvider = null; // { get(): 토큰|null, invalidate(), relogin(): Promise }
+export function setDriveProvider(p) { driveProvider = p; }
+export const hasDriveToken = () => (driveProvider ? !!driveProvider.get() : hasToken());
+export function getDriveToken() {
+  if (!driveProvider) return getToken();
+  const t = driveProvider.get();
+  if (!t) throw new NeedLogin();
+  return t;
+}
+export function invalidateDriveToken() {
+  if (driveProvider) driveProvider.invalidate();
+  else clearToken();
+}
+/** 드라이브 계정 다시 로그인 (추가 계정이면 그 계정으로). 없으면 null */
+export const driveRelogin = () => driveProvider?.relogin?.() || null;
 
 export function getToken() {
   if (!hasToken()) throw new NeedLogin();

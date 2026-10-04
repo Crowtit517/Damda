@@ -10,7 +10,8 @@
 // - 반복 일정, 공휴일, 남이 공유한 캘린더처럼 수정 권한이 없는 일정은 보기만 한다.
 // - 계정: 기본 계정(드라이브 동기화 계정) + 캘린더만 보는 추가 구글 계정 여러 개.
 import * as google from './google.js';
-import { store } from '../store.js';
+import { store, dataPlace } from '../store.js';
+import { findFile, create as createDriveFile } from './drive.js';
 import { getMeta, setMeta } from '../db.js';
 import { loadPref, savePref, dateToKey, keyToDate, addDays, pad } from '../utils.js';
 
@@ -110,7 +111,15 @@ export function target() {
     || list.find(c => c.acct === MAIN && c.primary)
     || list[0] || null;
 }
-export function setTarget(acct, id) { savePref(TARGET_KEY, `${acct}|${id}`); emit(); }
+/** 일정 담는 곳 정하기. 고른 캘린더는 담다에서 저절로 보이게 한다 (만든 일정이 안 보이는 일이 없게) */
+export function setTarget(acct, id) {
+  savePref(TARGET_KEY, `${acct}|${id}`);
+  const show = loadPref(SHOW_KEY, {});
+  show[`${acct}|${id}`] = true;
+  savePref(SHOW_KEY, show);
+  emit();
+  refresh({ force: false });
+}
 
 /** 담다에서 만든 일정을 구글 캘린더에 저장할 수 있나 */
 export const canWrite = () => isEnabled() && !!target();
@@ -580,13 +589,31 @@ export async function addAccount() {
   return email;
 }
 
+/** 추가 계정이 받을 권한: 캘린더 + (할 일·가계부 담는 곳이면) 드라이브 */
+const scopesFor = email => [...google.CAL_SCOPES, ...(email === dataPlace() ? [google.DRIVE_SCOPE] : [])];
+
 /** 추가 계정 다시 로그인 (만료됐을 때). 버튼을 누른 직후에 불러야 한다 */
 export async function reloginAccount(email) {
-  const t = await google.requestToken({ scopes: google.CAL_SCOPES, hint: email });
+  const t = await google.requestToken({ scopes: scopesFor(email), hint: email });
   const x = extras();
   x[email] = t;
   savePref(EXTRA_KEY, x);
   await refresh({ force: false });
+}
+
+/** 할 일·가계부 담는 곳으로 쓰려고 그 계정의 드라이브 권한을 받는다. 반환: 그 계정에 담긴 기록이 있는지 */
+export async function prepareDataPlace(email) {
+  const t = await google.requestToken({ scopes: [...google.CAL_SCOPES, google.DRIVE_SCOPE], hint: email });
+  if (!(t.scope || '').split(' ').includes(google.DRIVE_SCOPE)) throw new Error('드라이브 권한이 체크되지 않았어요. 다시 고르면서 체크해 주세요.');
+  const x = extras();
+  x[email] = t;
+  savePref(EXTRA_KEY, x);
+  return { token: t.token, hasRecords: !!(await findFile(t.token)) };
+}
+
+/** 지금 기록을 그 계정의 드라이브에 옮겨 담는다 ("가져가기") */
+export async function copyRecordsTo(token) {
+  await createDriveFile(store.exportData(), token);
 }
 
 export async function removeAccount(email) {
@@ -627,6 +654,16 @@ function armRelogin() {
     if (!acc) return;
     try { await reloginAccount(acc.email); } catch {}
   }, { capture: true, once: true });
+}
+
+// ---- 할 일·가계부 담는 곳이 추가 계정이면, 드라이브는 그 계정 토큰으로 ----
+if (dataPlace()) {
+  const place = dataPlace();
+  google.setDriveProvider({
+    get: () => { const t = tokenOf(place); return t && (t.scope || '').split(' ').includes(google.DRIVE_SCOPE) ? t.token : null; },
+    invalidate: () => { const x = extras(); if (x[place]) { x[place] = { ...x[place], exp: 0 }; savePref(EXTRA_KEY, x); } },
+    relogin: () => reloginAccount(place),
+  });
 }
 
 // ---- 시작 ----

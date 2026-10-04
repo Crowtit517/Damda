@@ -6,10 +6,13 @@
 // 저장소: IndexedDB(서랍장) → 못 쓰면 예전처럼 localStorage(메모지) 'ple-v1'.
 // 예전 'ple-v1'은 지우지 않고 백업으로 남겨 두고, 앱을 열 때마다 그쪽에 더 새로운 항목이 있으면 가져온다
 // (IndexedDB를 못 쓴 날 적은 기록도 이렇게 다시 합쳐진다).
-import { isValidKey } from './utils.js';
+import { isValidKey, loadPref } from './utils.js';
 import * as idb from './db.js';
 
-const STORAGE_KEY = 'ple-v1';
+// 할 일·가계부를 담는 곳(계정)마다 저장소를 따로 쓴다 ('' = 처음 연결한 기본 계정)
+const PLACE = loadPref('ple-data-acct', '') || '';
+export const dataPlace = () => PLACE;
+const STORAGE_KEY = PLACE ? `ple-v1:${PLACE}` : 'ple-v1';
 const COLLECTIONS = ['tasks', 'expenses', 'events', 'categories', 'recurring', 'taskRules', 'catFolders'];
 
 const emptyData = () => ({ version: 1, tasks: {}, expenses: {}, events: {}, categories: {}, recurring: {}, taskRules: {}, catFolders: {} });

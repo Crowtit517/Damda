@@ -3,20 +3,21 @@
 // 한 번 맞추기(syncNow):
 //   1) 드라이브 파일의 버전을 가볍게 확인 → 바뀌었으면 받아서 항목별로 합친다 (updatedAt이 나중인 쪽이 남음).
 //   2) 이 기기에 올리지 않은 변경이 있으면, 올리기 직전에 버전을 한 번 더 확인하고(다른 기기가 방금 올렸으면 다시 합침) 올린다.
-// 방식(☰ 메뉴에서 고름):
-//   auto   저장 후 1초 안에 올리고, 화면이 보이는 동안 5초마다 확인, 열 때·돌아올 때 즉시
-//   saver  열 때·돌아올 때·화면을 떠날 때만
-//   manual [지금 맞추기]를 누를 때만
-//   local  맞추지 않음
-import { store } from '../store.js';
+// 구글 계정을 연결하면 항상 자동으로 맞춘다 (연결하지 않으면 이 기기에만 저장).
+//   기본   저장 후 1초 안에 올리고, 화면이 보이는 동안 5초마다 확인, 열 때·돌아올 때 즉시
+//   절약 모드(켜기/끄기)  열 때·돌아올 때·화면을 떠날 때만 + [지금 맞추기]
+// 드라이브 계정은 "할 일·가계부 담는 곳"(기본 계정 또는 추가 계정)을 따른다.
+import { store, dataPlace } from '../store.js';
 import * as googleApi from './google.js';
 import * as driveApi from './drive.js';
 import { loadPref, savePref } from '../utils.js';
 
 const MODE_KEY = 'ple-sync-mode';
 const ACCOUNT_KEY = 'ple-google';
-const STATE_KEY = 'ple-sync-state';
-const DIRTY_KEY = 'ple-sync-dirty';
+// 담는 곳(계정)마다 드라이브 파일이 따로라서, 맞춘 상태도 따로 기억한다
+const SUFFIX = dataPlace() ? `:${dataPlace()}` : '';
+const STATE_KEY = `ple-sync-state${SUFFIX}`;
+const DIRTY_KEY = `ple-sync-dirty${SUFFIX}`;
 const COLLECTIONS = ['tasks', 'expenses', 'events', 'categories', 'recurring', 'taskRules', 'catFolders'];
 
 /** 테스트에서 가짜 드라이브로 바꿔 끼울 수 있게 */
@@ -31,7 +32,8 @@ let uploadTimer = null;
 let status = { phase: 'off', message: '' };
 const listeners = new Set();
 
-export const syncMode = () => loadPref(MODE_KEY, 'local');
+/** 'auto' | 'saver' (예전 'local'·'manual' 값은 자동으로 본다) */
+export const syncMode = () => (loadPref(MODE_KEY, 'auto') === 'saver' ? 'saver' : 'auto');
 export const account = () => loadPref(ACCOUNT_KEY, null);       // { email }
 export const isConnected = () => !!account();
 export const getStatus = () => ({ ...status, lastSync: state.lastSync || null });
@@ -76,9 +78,9 @@ function mergeRemote(remote) {
 export function syncNow() {
   if (running) return running;
   running = (async () => {
-    if (syncMode() === 'local' || !isConnected()) return setStatus('off');
+    if (!isConnected()) return setStatus('off');
     const { drive, google } = adapters;
-    if (!google.hasToken()) return setStatus('need-login', '다시 로그인하면 이어서 맞춰요');
+    if (!(google.hasDriveToken ? google.hasDriveToken() : google.hasToken())) return setStatus('need-login', '다시 로그인하면 이어서 맞춰요');
     setStatus('syncing');
     try {
       let meta = state.fileId ? await drive.getMeta(state.fileId) : null;
@@ -116,29 +118,27 @@ export function syncNow() {
 
 // ---- 방식에 따라 언제 맞출지 ----
 function onVisibility() {
-  const mode = syncMode();
-  if (mode !== 'auto' && mode !== 'saver') return;
+  if (!isConnected()) return;
   if (document.visibilityState === 'visible') syncNow();
   else if (dirty) syncNow(); // 화면을 떠날 때 남은 변경을 올려 둔다
 }
 document.addEventListener('visibilitychange', onVisibility);
-window.addEventListener('online', () => { if (syncMode() !== 'manual') syncNow(); });
+window.addEventListener('online', () => { if (isConnected()) syncNow(); });
 
 /** 방식·연결이 바뀌거나 앱이 켜질 때 다시 설정 */
 export function startSync() {
   clearInterval(pollTimer);
   clearTimeout(uploadTimer);
-  const mode = syncMode();
-  if (mode === 'local' || !isConnected()) return setStatus(mode === 'local' ? 'off' : 'waiting');
-  if (mode === 'auto') {
+  if (!isConnected()) return setStatus('off');
+  if (syncMode() === 'auto') {
     pollTimer = setInterval(() => { if (document.visibilityState === 'visible') syncNow(); }, 5000);
   }
-  if (mode !== 'manual') syncNow();
-  else setStatus(adapters.google.hasToken() ? 'ok' : 'need-login', adapters.google.hasToken() ? '' : '다시 로그인하면 맞출 수 있어요');
+  syncNow();
 }
 
-export function setSyncMode(mode) {
-  savePref(MODE_KEY, mode);
+/** 절약 모드 켜기/끄기 */
+export function setSaver(on) {
+  savePref(MODE_KEY, on ? 'saver' : 'auto');
   startSync();
 }
 
@@ -150,7 +150,7 @@ let autoArmed = false;
 let autoGaveUp = false;
 
 function armAutoRelogin() {
-  if (autoArmed || autoGaveUp || !isConnected() || syncMode() === 'local') return;
+  if (autoArmed || autoGaveUp || !isConnected()) return;
   autoArmed = true;
   adapters.google.loadGis?.().catch(() => {});
   document.addEventListener('click', onNextClick, { capture: true, once: true });
@@ -160,7 +160,7 @@ async function onNextClick(e) {
   autoArmed = false;
   // 직접 누른 연결 버튼은 그 버튼이 처리한다
   if (e.target.closest?.('[data-act="google-reconnect"], [data-act="google-disconnect"], [data-act="google-connect"], [data-act="gcal-connect"]')) return;
-  if (adapters.google.hasToken() || !isConnected()) return;
+  if ((adapters.google.hasDriveToken ? adapters.google.hasDriveToken() : adapters.google.hasToken()) || !isConnected()) return;
   try {
     await reconnectGoogle();
   } catch {
@@ -176,7 +176,6 @@ export async function connectGoogle() {
   autoGaveUp = false;
   const email = await google.fetchEmail().catch(() => '');
   savePref(ACCOUNT_KEY, { email, connectedAt: Date.now() });
-  if (syncMode() === 'local') savePref(MODE_KEY, 'auto'); // 처음 연결하면 추천 방식으로
   setDirty(true); // 이 기기 데이터도 한 번 올려서 합친다
   startSync();
   return email;
@@ -184,7 +183,10 @@ export async function connectGoogle() {
 
 /** 로그인만 다시 (만료됐을 때). 계정은 그대로 */
 export async function reconnectGoogle() {
-  await adapters.google.signIn(account()?.email || '');
+  // 할 일·가계부 담는 곳이 추가 계정이면 그 계정으로 다시 로그인
+  const other = adapters.google.driveRelogin?.();
+  if (other) await other;
+  else await adapters.google.signIn(account()?.email || '');
   autoGaveUp = false;
   startSync();
 }
@@ -193,7 +195,6 @@ export async function reconnectGoogle() {
 export function disconnectGoogle() {
   adapters.google.signOut();
   savePref(ACCOUNT_KEY, null);
-  savePref(MODE_KEY, 'local');
   state = {};
   saveState();
   setDirty(true);

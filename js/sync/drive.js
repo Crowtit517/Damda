@@ -1,23 +1,24 @@
 // 구글 드라이브 '앱 전용 숨김 폴더'(appDataFolder)에 데이터 파일 하나를 읽고 쓴다.
 // 이 폴더는 이 앱만 볼 수 있고, 사용자의 다른 드라이브 파일에는 접근하지 않는다.
-import { getToken, clearToken, NeedLogin } from './google.js';
+import { getDriveToken, invalidateDriveToken, NeedLogin } from './google.js';
 import { DRIVE_FILE_NAME } from '../config.js';
 
 const API = 'https://www.googleapis.com/drive/v3';
 const UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
 const META = 'id,version,modifiedTime';
 
-async function call(url, opts = {}) {
-  const r = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: `Bearer ${getToken()}` } });
-  if (r.status === 401) { clearToken(); throw new NeedLogin(); }
+// token을 주면 그 토큰으로 (할 일·가계부 담는 곳을 바꿀 때 새 계정을 미리 살펴보는 용도)
+async function call(url, opts = {}, token = null) {
+  const r = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: `Bearer ${token || getDriveToken()}` } });
+  if (r.status === 401) { if (!token) invalidateDriveToken(); throw new NeedLogin(); }
   if (!r.ok) throw new Error(`구글 드라이브와 통신하지 못했어요 (${r.status})`);
   return r;
 }
 
 /** 데이터 파일 찾기 (없으면 null) */
-export async function findFile() {
+export async function findFile(token = null) {
   const q = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
-  const r = await call(`${API}/files?spaces=appDataFolder&q=${q}&fields=files(${META})&orderBy=modifiedTime desc`);
+  const r = await call(`${API}/files?spaces=appDataFolder&q=${q}&fields=files(${META})&orderBy=modifiedTime desc`, {}, token);
   return (await r.json()).files?.[0] || null;
 }
 
@@ -37,7 +38,7 @@ export async function download(id) {
   return r.json();
 }
 
-export async function create(data) {
+export async function create(data, token = null) {
   const boundary = 'damda' + Math.random().toString(36).slice(2);
   const body = [
     `--${boundary}`, 'Content-Type: application/json; charset=UTF-8', '',
@@ -47,7 +48,7 @@ export async function create(data) {
   ].join('\r\n');
   const r = await call(`${UPLOAD}/files?uploadType=multipart&fields=${META}`, {
     method: 'POST', headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body,
-  });
+  }, token);
   return r.json();
 }
 
