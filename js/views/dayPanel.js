@@ -114,7 +114,7 @@ export function render() {
 // 가계부는 읽기만: 합계 + 최근 기록 몇 개. 누르면 가계부 탭의 이 날짜로
 function renderLedgerSummary(entries, spent, earned) {
   if (!getSetting('money')) {
-    expensesSlot.innerHTML = '<button type="button" class="ledger-mini hidden-money" data-goto="ledger"><span>🙈 금액을 숨겼어요</span><span class="muted small">가계부에서 보기 ›</span></button>';
+    expensesSlot.innerHTML = '<button type="button" class="ledger-mini hidden-money" data-goto="ledger"><span>금액을 숨겼어요</span><span class="muted small">가계부에서 보기 ›</span></button>';
     return;
   }
   if (!entries.length) { expensesSlot.innerHTML = '<p class="empty">이날 기록이 없어요.</p>'; return; }
