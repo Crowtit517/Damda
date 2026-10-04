@@ -102,6 +102,7 @@
 import { store } from './js/store.js';
 import { getSetting } from './js/settings.js';
 import { todayKey, toKey, escapeHtml, formatNumber, DOW_NAMES, keyToDate } from './js/utils.js';
+import { tasksOn, setTaskDone } from './js/taskRepeat.js'; // 반복 할 일도 담다와 똑같이 (날마다 규칙에서 계산)
 
 const $ = id => document.getElementById(id);
 const desk = window.desk || { notify() {}, widget() {}, onView() {} };
@@ -110,7 +111,8 @@ let view = 'month', selected = null;
 const moneyOn = () => getSetting('money'); // 담다의 💰 가계부 보기 스위치를 그대로 따른다
 
 const sortEvents = list => list.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-const tasksOf = key => store.byDate('tasks', key).filter(t => !t.movedTo).sort((a, b) => (a.done - b.done) || (a.createdAt - b.createdAt));
+const shown = new Map(); // 화면에 보이는 할 일 (id → 할 일). 반복 할 일은 저장 전일 수 있어 체크할 때 이걸 쓴다
+const tasksOf = key => tasksOn(key).filter(t => !t.movedTo).sort((a, b) => (a.done - b.done) || (a.createdAt - b.createdAt));
 const spentOf = key => store.byDate('expenses', key).filter(x => x.type === 'expense');
 const sum = list => list.reduce((s, x) => s + Number(x.amount || 0), 0);
 const dateLabel = key => { const d = keyToDate(key); return `${d.getMonth() + 1}월 ${d.getDate()}일 (${DOW_NAMES[d.getDay()]})`; };
@@ -119,7 +121,7 @@ const eventsHtml = evs => evs.length
   ? evs.map(e => `<li class="ev"><span class="time">${e.time || '종일'}</span><span>${escapeHtml(e.title)}</span></li>`).join('')
   : '<li class="empty">일정이 없어요</li>';
 const tasksHtml = tasks => tasks.length
-  ? tasks.map(t => `<li class="task${t.done ? ' done' : ''}" data-id="${t.id}"><label><input type="checkbox"${t.done ? ' checked' : ''} /><span>${escapeHtml(t.title)}</span></label><button class="x" data-del="tasks" title="지우기">✕</button></li>`).join('')
+  ? tasks.map(t => { shown.set(t.id, t); return `<li class="task${t.done ? ' done' : ''}" data-id="${escapeHtml(t.id)}"><label><input type="checkbox"${t.done ? ' checked' : ''} /><span>${escapeHtml(t.title)}${t.ruleId && t.label ? ` (${escapeHtml(t.label)})` : ''}</span></label>${t.ruleId ? '' : '<button class="x" data-del="tasks" title="지우기">✕</button>'}</li>`; }).join('')
   : '<li class="empty">할 일이 없어요</li>';
 const expsHtml = exps => exps.length
   ? exps.map(x => `<li class="exp" data-id="${x.id}"><span class="money">${formatNumber(x.amount)}원</span><span class="memo">${escapeHtml(x.memo || '')}</span><button class="x" data-del="expenses" title="지우기">✕</button></li>`).join('')
@@ -221,7 +223,10 @@ $('card').addEventListener('click', e => {
   const li = e.target.closest('li[data-id]'); if (!li) return;
   const del = e.target.closest('[data-del]');
   if (del) return store.remove(del.dataset.del, li.dataset.id);
-  if (e.target.matches('input[type=checkbox]')) store.put('tasks', { id: li.dataset.id, done: e.target.checked });
+  if (e.target.matches('input[type=checkbox]')) {
+    const t = shown.get(li.dataset.id);
+    if (t) setTaskDone(t, e.target.checked); // 반복 할 일이면 그날 회차 기록을 만든다
+  }
 });
 $('card').addEventListener('submit', e => {
   e.preventDefault();

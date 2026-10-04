@@ -21,3 +21,6 @@ desktop/oauth.local.json
 mobile/node_modules/
 *.keystore
 *.jks
+
+# 시험 스크립트·시험판 기록: 이 PC에만 둔다 (레포에는 앱에 필요한 파일만)
+test/

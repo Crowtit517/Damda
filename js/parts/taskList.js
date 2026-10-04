@@ -60,7 +60,7 @@ function taskRowHtml(t, { checklist }) {
         <input type="checkbox"${t.done ? ' checked' : ''} />
         <span class="task-main">
           <span class="task-title">${escapeHtml(t.title)}${t.label ? ` <span class="task-label">${escapeHtml(t.label)}</span>` : ''}</span>
-          ${rule ? `<span class="task-meta">${repeatLabel(rule)}${(rule.alarms || []).some(Boolean) ? ` · ⏰ ${rule.alarms.filter(Boolean).map(alarmLabel).join(', ')}` : ''}${streak > 1 ? ` · 🔥 ${streak}일 연속` : ''}</span>` : ''}
+          ${rule ? `<span class="task-meta">${repeatLabel(rule)}${rule.alarms?.[t.slot ?? 0] ? ` · ⏰ ${alarmLabel(rule.alarms[t.slot ?? 0])}` : ''}${streak > 1 ? ` · 🔥 ${streak}일 연속` : ''}</span>` : ''}
           ${!rule && t.alarm ? `<span class="task-meta">⏰ ${alarmLabel(t.alarm)}</span>` : ''}
         </span>
       </label>

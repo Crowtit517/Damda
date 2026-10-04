@@ -79,7 +79,7 @@
 - 다른 사람에게는 설치 파일 하나만 주면 된다 (화면은 공개 사이트에서 받으므로, 사이트를 고치면 exe를 다시 만들지 않아도 최신)
 - 시작 화면: PC 앱은 `desktop/splash.html`, 폰(홈 화면 앱)은 `js/ui/bootSplash.js`. 처음 만든 시험판은 `test/splash-demo/`(`시작 화면 보기.bat`)
 - 시험: `test/pc_qa.mjs`(PC 전체 65개, 개발 모드에서), `test/mobile_splash.mjs`(폰 시작 화면), `test/web_regress.mjs`(폰·웹 화면이 그대로인지)
-- `test/`: 개발 중 쓴 시험 스크립트(가짜 구글 서버로 검증)·화면 사진·PC 시험판과 그 데이터(`test/damda-desktop/prototype-data.json`). 앱은 쓰지 않는다
+- `test/`: 개발 중 쓴 시험 스크립트(가짜 구글 서버로 검증)·화면 사진·PC 시험판과 그 데이터. **이 PC에만 두고 git에는 올리지 않는다**(10-05). 앱은 쓰지 않는다
 
 ## 8. 갤럭시 앱 만들기·나눠 주기 (10-05)
 
