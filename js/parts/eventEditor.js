@@ -23,7 +23,7 @@ export function openEventEditor(ev) {
       <form class="event-form">
         ${eventFormHtml({
           ev, dayKey: ev.start, google, calColor: cal?.color,
-          note: google ? `구글 캘린더 · ${escapeHtml(ev.calName)}${cal?.accountEmail ? ` (${escapeHtml(cal.accountEmail)})` : ''}에 저장돼요` : '담다에만 저장된 일정이에요',
+          note: google ? `구글 캘린더 · ${escapeHtml(ev.calName)}${cal?.accountEmail && cal.accountEmail !== ev.calName ? ` (${escapeHtml(cal.accountEmail)})` : ''}에 저장돼요` : '담다에만 저장된 일정이에요',
           submitLabel: '저장',
         })}
       </form>

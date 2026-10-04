@@ -1212,3 +1212,4 @@ a.g-open:hover { background: var(--surface-hover); }
 .event-form .form-line select { flex: 1; min-height: 38px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); padding: 0 8px; font: inherit; }
 .event-note { margin: 0; line-height: 1.5; }
 .color-row { flex-wrap: wrap; }
+a.pill-btn { text-decoration: none; color: var(--text); }

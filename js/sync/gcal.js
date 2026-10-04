@@ -5,9 +5,12 @@
 // - 쓰기: 담다에서 만들고 고치고 지운 일정은 "보낼 목록(outbox)"에 넣고 순서대로 구글에 보낸다.
 //   새 일정은 아이디를 미리 정해 두어 다시 보내도 하나만 생기고, 고칠 때는 버전(etag)을 확인해
 //   다른 곳에서 먼저 고친 일정은 덮어쓰지 않는다. 지우기는 8초 동안 되돌릴 수 있다.
+// - 담다에만 있던 일정(캘린더 연결 전에 만든 것)은 쓸 수 있게 되면 저절로 구글로 옮긴다.
+//   담다 일정 아이디로 정한 고정 구글 아이디를 써서, 두 기기가 동시에 옮겨도 하나만 생긴다.
 // - 반복 일정, 공휴일, 남이 공유한 캘린더처럼 수정 권한이 없는 일정은 보기만 한다.
 // - 계정: 기본 계정(드라이브 동기화 계정) + 캘린더만 보는 추가 구글 계정 여러 개.
 import * as google from './google.js';
+import { store } from '../store.js';
 import { getMeta, setMeta } from '../db.js';
 import { loadPref, savePref, dateToKey, keyToDate, addDays, pad } from '../utils.js';
 
@@ -38,7 +41,8 @@ let sending = null;
 const pendingDeletes = new Map();  // 일정 id → { ev, timer }
 const listeners = new Set();
 
-export const isEnabled = () => !!loadPref(ON_KEY, false);
+// 켜짐 여부: 사용자가 [캘린더 연결 끊기]로 직접 끈 경우(false)만 꺼 두고, 그 외에는 구글 계정이 연결돼 있으면 켠다
+export const isEnabled = () => { const v = loadPref(ON_KEY, null); return v === null ? !!mainEmail() : !!v; };
 export const getStatus = () => ({ ...status, accounts: { ...status.accounts }, outbox: outbox.length });
 export const subscribe = fn => { listeners.add(fn); return () => listeners.delete(fn); };
 const emit = () => listeners.forEach(fn => { try { fn(); } catch (e) { console.error(e); } });
@@ -321,6 +325,7 @@ export function refresh({ force = true } = {}) {
     else if (main === 'need-scope') setStatus('need-scope', '캘린더 권한이 없어요');
     else setStatus('need-login', '구글 로그인이 끝나면 일정을 불러와요');
     armRelogin();
+    if (anyOk) await autoMigrate();
     sendOutbox();
   })().finally(() => { running = null; });
   return running;
@@ -390,10 +395,9 @@ function optimistic(input, { acct, calId, gid, prev }) {
   };
 }
 
-export async function createEvent(input) {
+export async function createEvent(input, { gid = newGid() } = {}) {
   const t = target();
   if (!t) throw new Error('일정을 저장할 구글 캘린더가 없어요.');
-  const gid = newGid();
   const body = { ...toGoogleBody(input), id: gid };
   putInCache(optimistic(input, { acct: t.acct, calId: t.id, gid }));
   outbox.push({ op: 'insert', acct: t.acct, calId: t.id, gid, body });
@@ -515,10 +519,23 @@ export function nearestColorId(hex) {
   return best;
 }
 
-export async function migrateLocal(events) {
-  for (const e of events) {
-    await createEvent({ title: e.title, start: e.start, end: e.end, time: e.time || '', colorId: nearestColorId(e.color), reminder: 'default' });
-  }
+/** 담다 일정 아이디 → 항상 같은 구글 일정 아이디 (구글 규칙: 0~9, a~v) */
+const migrateId = localId => 'damdal' + [...String(localId)].map(ch => ch.charCodeAt(0).toString(32).padStart(2, '0')).join('');
+
+let migrating = false;
+/** 담다에만 있는 일정을 구글 캘린더로 저절로 옮긴다 (쓸 수 있을 때만) */
+async function autoMigrate() {
+  if (migrating || !canWrite()) return;
+  const local = store.list('events');
+  if (!local.length) return;
+  migrating = true;
+  try {
+    for (const e of local) {
+      await createEvent({ title: e.title, start: e.start, end: e.end || e.start, time: e.time || '', colorId: nearestColorId(e.color), reminder: 'default' }, { gid: migrateId(e.id) });
+    }
+    store.batch(() => local.forEach(e => store.remove('events', e.id)));
+    notice(`담다에만 있던 일정 ${local.length}개를 구글 캘린더로 옮겼어요`);
+  } finally { migrating = false; }
 }
 
 // ---- 연결 · 계정 ----
@@ -529,10 +546,9 @@ export function prepareConnect() {
 
 /** 연결이 끝난 뒤: 캘린더 권한을 받았으면 켠다. 반환값: 켰는지 */
 export function afterConnect() {
-  if (!google.hasScope(google.CAL_READ)) return false;
   savePref(ON_KEY, true);
   refresh();
-  return true;
+  return google.hasScope(google.CAL_READ);
 }
 
 /** 기본 계정에 캘린더 권한(보기+수정)을 받는다. 버튼을 누른 직후에 불러야 한다 */
@@ -614,6 +630,8 @@ function armRelogin() {
 }
 
 // ---- 시작 ----
+// 이미 구글 계정이 연결된 기기: 다음 로그인 때 캘린더 권한도 함께 요청하도록 (직접 끈 경우 제외)
+if (isEnabled()) prepareConnect();
 (async () => {
   try {
     const saved = await getMeta(CACHE_KEY);

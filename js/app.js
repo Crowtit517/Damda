@@ -198,8 +198,8 @@ function gcalCardHtml() {
   if (!gcal.isEnabled()) {
     return `
       <div class="sync-card">
-        <button type="button" class="google-btn" data-act="gcal-connect"><span class="g-mark cal" aria-hidden="true">📅</span> 구글 캘린더 연결</button>
-        <p class="muted small gcal-note">폰 캘린더와 담다의 <b>일정</b>이 서로 추가·수정·삭제돼요. 할 일과 가계부는 담다에만 있어요.</p>
+        <button type="button" class="google-btn" data-act="gcal-connect"><span class="g-mark cal" aria-hidden="true">📅</span> 구글 캘린더 다시 켜기</button>
+        <p class="muted small gcal-note">캘린더 연결을 꺼 두었어요. 켜면 폰 캘린더와 담다의 <b>일정</b>이 서로 추가·수정·삭제돼요. 할 일과 가계부는 담다에만 있어요.</p>
       </div>`;
   }
   const st = gcal.getStatus();
@@ -217,7 +217,7 @@ function gcalCardHtml() {
     <div class="sync-card">
       <div class="sync-status">${line}</div>
       ${mainState === 'need-scope' || mainState === 'read-only' ? `
-        <button type="button" class="google-btn" data-act="gcal-connect"><span class="g-mark cal" aria-hidden="true">📅</span> ${mainState === 'read-only' ? '일정 수정도 허락하기' : '다시 연결 (캘린더 권한 체크)'}</button>` : ''}
+        <button type="button" class="google-btn" data-act="gcal-connect"><span class="g-mark cal" aria-hidden="true">📅</span> ${mainState === 'read-only' ? '일정 수정도 허락하기' : '캘린더 권한 허락하기'}</button>` : ''}
       ${gcal.accounts().map(a => {
         const state = st.accounts?.[a.key];
         const list = cals.filter(c => c.acct === a.key);
@@ -240,6 +240,7 @@ function gcalCardHtml() {
           </div>`;
       }).join('')}
       <button type="button" class="pill-btn wide" data-act="gcal-add-account">＋ 다른 구글 계정 캘린더 추가</button>
+
       ${writable.length ? `
         <label class="gcal-target">새 일정 저장
           <select data-gcal-target>
@@ -252,25 +253,6 @@ function gcalCardHtml() {
       </div>
       <p class="muted small sync-foot">구글 계정에 저장된 일정만 맞춰요 (삼성 캘린더의 "내 휴대전화"·"삼성 계정" 일정은 제외). 반복 일정·공휴일·남이 공유한 캘린더는 보기만 해요. 추가 계정은 구글 클라우드의 테스트 사용자로 등록되어 있어야 해요.</p>
     </div>`;
-}
-
-// 담다에만 있던 일정을 구글 캘린더로 옮길지 한 번 묻는다
-async function askMigrateEvents() {
-  if (!gcal.canWrite() || loadPref('ple-gcal-migrate-asked', false)) return;
-  const local = store.list('events');
-  if (!local.length) return;
-  const t = gcal.target();
-  const v = await choiceDialog({
-    title: '일정을 구글 캘린더로 옮길까요?',
-    message: `담다에만 있던 일정 ${local.length}개를 구글 캘린더(${t.name})로 옮기면 폰 캘린더에서도 보여요. 옮긴 뒤 담다 쪽 사본은 지워져요.`,
-    cancelLabel: '그대로 두기',
-    choices: [{ label: '옮기기', value: 'yes' }],
-  });
-  savePref('ple-gcal-migrate-asked', true);
-  if (v !== 'yes') return;
-  await gcal.migrateLocal(local);
-  store.batch(() => local.forEach(e => store.remove('events', e.id)));
-  toast(`일정 ${local.length}개를 구글 캘린더로 옮겼어요`);
 }
 
 function renderMenu() {
@@ -358,14 +340,12 @@ menu.addEventListener('click', async e => {
       const email = await sync.connectGoogle();
       const cal = gcal.afterConnect();
       toast(`${email || '구글 계정'}과 연결했어요${cal ? ' · 캘린더도 함께' : ''}`);
-      if (cal) setTimeout(askMigrateEvents, 1500);
     }
     if (act === 'google-reconnect') { await sync.reconnectGoogle(); toast('다시 로그인했어요'); }
     if (act === 'sync-now') await sync.syncNow();
     if (act === 'gcal-connect') {
       const r = await gcal.connectCalendar(sync.account()?.email || '');
       toast(r.canWrite ? `구글 캘린더 ${r.shown}개를 연결했어요 · 서로 수정돼요` : `구글 캘린더 ${r.shown}개를 연결했어요 · 보기만`);
-      if (r.canWrite) setTimeout(askMigrateEvents, 800);
     }
     if (act === 'gcal-add-account') {
       const email = await gcal.addAccount();
