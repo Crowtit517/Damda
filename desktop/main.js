@@ -16,8 +16,9 @@ const ICON = path.join(__dirname, 'build', 'icon.png');
 // 보기마다 기본 크기: 달력 = 크기 조절 가능, 오늘 요약 = 너비 고정·높이는 내용에 맞춤
 const VIEWS = { month: { w: 560, h: 620 }, day: { w: 320, h: 520 } };
 const BAR_H = 56; // 제목 줄 높이 = 담다 위쪽 줄 높이 (css: --desk-bar-h)
+const SPLASH_MIN = 1800; // 시작 화면을 보여 주는 최소 시간 (너무 빨리 사라지면 깜빡임처럼 보여서)
 
-let mainWin = null, widget = null, quitting = false, server = null;
+let mainWin = null, widget = null, splash = null, quitting = false, server = null;
 
 if (!app.requestSingleInstanceLock()) app.quit();
 app.on('second-instance', () => showMain());
@@ -110,6 +111,41 @@ function hideWidget() {
 
 const toggleWidget = () => (widget && !widget.isDestroyed() && widget.isVisible() ? hideWidget() : openWidget());
 
+// ---- 시작 화면: 둥근 사각형에 "담다 · 하루를 담는 기록장"이 스르륵 나타났다가, 담다가 준비되면 사라진다 ----
+function createSplash() {
+  splash = new BrowserWindow({
+    width: 520, height: 340, frame: false, transparent: true, resizable: false, movable: false,
+    alwaysOnTop: true, skipTaskbar: true, hasShadow: false, show: false, center: true, focusable: false,
+  });
+  splash.loadFile(path.join(__dirname, 'splash.html'));
+  splash.once('ready-to-show', () => splash.show());
+  splash.on('closed', () => { splash = null; });
+}
+
+// 담다 창이 준비되면: 시작 화면을 스르륵 걷고, 담다 창을 투명에서 천천히 보여 준다
+let revealed = false;
+function revealMain(t0) {
+  if (revealed) return;
+  revealed = true;
+  const go = () => {
+    if (!splash || splash.isDestroyed()) return fadeInMain();
+    splash.webContents.executeJavaScript("document.body.classList.add('leave')").catch(() => {});
+    setTimeout(() => { fadeInMain(); setTimeout(() => splash?.destroy(), 250); }, 520);
+  };
+  setTimeout(go, Math.max(0, SPLASH_MIN - (Date.now() - t0)));
+}
+
+function fadeInMain() {
+  if (!mainWin || mainWin.isDestroyed()) return;
+  mainWin.setOpacity(0); mainWin.show();
+  let o = 0;
+  const step = setInterval(() => {
+    if (mainWin.isDestroyed()) return clearInterval(step);
+    o = Math.min(1, o + 0.08); mainWin.setOpacity(o);
+    if (o >= 1) { clearInterval(step); if (state.open) openWidget({ focus: false }); }
+  }, 16);
+}
+
 function showMain() {
   if (!mainWin || mainWin.isDestroyed()) createMain();
   if (mainWin.isMinimized()) mainWin.restore();
@@ -118,7 +154,7 @@ function showMain() {
 
 function createMain() {
   mainWin = new BrowserWindow({
-    width: 1280, height: 820, minWidth: 960, minHeight: 600, title: '담다', icon: appIcon(),
+    width: 1280, height: 820, minWidth: 960, minHeight: 600, title: '담다', icon: appIcon(), show: false,
     backgroundColor: '#ffffff', autoHideMenuBar: true,
     // Windows 기본 제목 줄 대신 담다 위쪽 줄이 제목 줄 역할 (— □ ✕ 만 남긴다. 색은 테마에 맞춰 preload가 알려 준다)
     titleBarStyle: 'hidden',
@@ -205,9 +241,12 @@ app.whenReady().then(async () => {
     }
     return net.fetch(req, { bypassCustomProtocolHandlers: true });
   });
+  const t0 = Date.now();
+  createSplash();
   await ensureDevServer();
   createMain();
-  if (state.open) mainWin.once('ready-to-show', () => openWidget({ focus: false }));
+  mainWin.once('ready-to-show', () => revealMain(t0));
+  setTimeout(() => revealMain(t0), 10000); // 사이트를 못 불러와 준비 신호가 안 와도 10초 뒤엔 담다 창을 연다
   globalShortcut.register('CommandOrControl+Shift+D', toggleWidget);
 });
 

@@ -73,7 +73,9 @@
 
 - 코드: `desktop/` (Electron). 웹 담다는 그대로 npm 없이, 이 폴더만 `npm install`
   - 개발: `cd desktop` → `npm install` → `npm run dev` (담다 폴더를 localhost:5500으로 띄워서 연다)
-  - exe 만들기: `npm run build` → `desktop/dist/Damda.exe` (설치 없이 실행되는 한 파일, 약 95MB). 만든 exe는 git에 올리지 않는다
+  - 설치 파일 만들기: `npm run build` → `desktop/dist/Damda-Setup.exe` (약 106MB). 한 번 실행하면 바로 설치되고(`AppData\Local\Programs`), 바탕화면·시작 메뉴에 **"담다" 바로가기**만 생긴다(.exe가 보이지 않음). 지우기는 Windows 설정 → 앱. 만든 파일은 git에 올리지 않는다
 - 서명하지 않은 exe라 처음 실행 때 Windows가 "알 수 없는 게시자" 경고를 띄운다 → [추가 정보] → [실행]. 무료 범위에서는 그대로 둔다
-- 다른 사람에게는 exe 파일 하나만 주면 된다 (화면은 공개 사이트에서 받으므로, 사이트를 고치면 exe를 다시 만들지 않아도 최신)
+- 다른 사람에게는 설치 파일 하나만 주면 된다 (화면은 공개 사이트에서 받으므로, 사이트를 고치면 exe를 다시 만들지 않아도 최신)
+- 시작 화면: PC 앱은 `desktop/splash.html`, 폰(홈 화면 앱)은 `js/ui/bootSplash.js`. 처음 만든 시험판은 `test/splash-demo/`(`시작 화면 보기.bat`)
+- 시험: `test/pc_qa.mjs`(PC 전체 65개, 개발 모드에서), `test/mobile_splash.mjs`(폰 시작 화면), `test/web_regress.mjs`(폰·웹 화면이 그대로인지)
 - `test/`: 개발 중 쓴 시험 스크립트(가짜 구글 서버로 검증)·화면 사진·PC 시험판과 그 데이터(`test/damda-desktop/prototype-data.json`). 앱은 쓰지 않는다

@@ -17,6 +17,7 @@ import * as dayPanel from './views/dayPanel.js';
 import { openGuide } from './parts/guide.js';
 import { isDesk } from './desk.js';
 import { mountDeskSide, markDeskTab } from './parts/deskSide.js';
+import { hideBootSplash } from './ui/bootSplash.js';
 import { todayKey, loadPref, savePref, escapeHtml } from './utils.js';
 
 migrateCategories();
@@ -54,6 +55,7 @@ function showTab(next) {
 
 // PC 앱: 캘린더는 늘 왼쪽에 보이고, tab 은 오른쪽 구역에 무엇을 보일지 (calendar = 이 날)
 function showDeskTab(next) {
+  const changed = next !== tab;
   tab = next;
   savePref('ple-tab', tab);
   document.getElementById('view-calendar').hidden = false;
@@ -66,6 +68,8 @@ function showDeskTab(next) {
   document.title = '담다';
   calendar.render();
   if (tab !== 'calendar') SCREENS[tab].view.render();
+  // 탭을 바꾸면 맨 위부터 (예전에 내려 둔 위치가 남아 있지 않게)
+  if (changed) (tab === 'calendar' ? panel.querySelector('.panel-body') : document.getElementById(`view-${tab}`)).scrollTop = 0;
 }
 
 // 데이터가 바뀌면 보이는 화면만 다시 그린다
@@ -513,6 +517,7 @@ if ('serviceWorker' in navigator) {
 
 if (isDesk) mountDeskSide(showTab);
 showTab(tab);
+hideBootSplash();
 recordRecurring();
 // 할 일·가계부 담는 곳이 기본 계정이 아니면 알려 준다 (기록이 사라진 것처럼 오해하지 않게)
 if (dataPlace()) {

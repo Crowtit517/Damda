@@ -43,7 +43,7 @@
   .day.sel { border-color: var(--accent); }
   .chip { font-size: 10.5px; background: var(--ev); border-radius: 4px; padding: 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .more { font-size: 10px; color: var(--soft); }
-  .meta { margin-top: auto; display: flex; justify-content: space-between; font-size: 10px; color: var(--soft); font-variant-numeric: tabular-nums; }
+  .meta { margin-top: auto; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 4px; font-size: 10px; color: var(--soft); font-variant-numeric: tabular-nums; }
   .meta .m { color: var(--money); }
   .sheet { border-top: 1px solid var(--line); padding: 10px 14px 12px; max-height: 46%; overflow-y: auto; background: rgba(0,0,0,.18); }
   .sheet[hidden] { display: none; }
@@ -267,6 +267,8 @@ setInterval(() => { if ($('now').dataset.k !== todayKey()) render(); checkSoon()
 store.subscribe(render);
 // 담다에서 💰 가계부 보기 같은 설정을 바꾸면 바로 따라간다 (같은 저장소를 쓰는 다른 창의 변경 알림)
 window.addEventListener('storage', e => { if (!e.key || e.key.startsWith('ple-set-')) render(); });
+// 담다에서 '할 일·가계부 담는 곳'(계정)을 바꾸면 그 계정 저장소로 다시 연다 (안 그러면 예전 계정에 기록된다)
+window.addEventListener('storage', e => { if (e.key === 'ple-data-acct') location.reload(); });
 setView('month');
 desk.widget('hello'); // 저장된 보기를 받아 온다
 checkSoon();

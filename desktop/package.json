@@ -9,7 +9,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "electron-builder --win portable"
+    "build": "electron-builder --win nsis"
   },
   "build": {
     "appId": "io.github.crowtit517.damda",
@@ -18,6 +18,7 @@
       "main.js",
       "preload.js",
       "widget.html",
+      "splash.html",
       "build/icon.png",
       "package.json"
     ],
@@ -25,11 +26,19 @@
       "output": "dist"
     },
     "win": {
-      "target": "portable",
+      "target": "nsis",
       "icon": "build/icon.png"
     },
-    "portable": {
-      "artifactName": "Damda.exe"
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "shortcutName": "담다",
+      "uninstallDisplayName": "담다",
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "Damda-Setup.exe"
     }
   },
   "devDependencies": {

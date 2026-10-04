@@ -139,7 +139,7 @@ ok('알림(30분 전)·끝 시간(+1시간)도 함께 저장', r.rem.includes('"
 ok('보낸 뒤 "올리는 중" 표시 사라짐', r.pending !== true);
 
 // 3. 인터넷이 끊겼을 때 추가 → 다시 연결되면 한 번만 생성
-await ev(`__fakeSet(db => { db.fail = 1; }); const g = await import('/js/sync/gcal.js'); await g.createEvent({ title: '오프라인 일정', start: '${new Date().toISOString().slice(0, 10)}', end: '${new Date().toISOString().slice(0, 10)}', time: '', reminder: 'default' }); await new Promise(r => setTimeout(r, 600)); return 1`);
+await ev(`__fakeSet(db => { db.fail = 1; }); const g = await import('/js/sync/gcal.js'); await g.createEvent({ title: '오프라인 일정', start: '${new Date().toLocaleDateString('sv-SE')}', end: '${new Date().toLocaleDateString('sv-SE')}', time: '', reminder: 'default' }); await new Promise(r => setTimeout(r, 600)); return 1`);
 r = await ev(`${G} return { outbox: g.getStatus().outbox, shownWhileOffline: g.eventsOn(K).some(e => e.title === '오프라인 일정' && e.pending) }`);
 ok('인터넷이 끊겨도 화면에는 바로 보이고 보낼 목록에 남음', r.outbox === 1 && r.shownWhileOffline, JSON.stringify(r));
 await reload();

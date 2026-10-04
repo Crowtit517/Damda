@@ -15,6 +15,15 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+  <!-- 시작 화면: 홈 화면에 설치한 앱으로 열 때만 보인다 (css: display-mode standalone). PC 앱은 따로 창으로 보여 준다 -->
+  <div class="boot-splash" id="bootSplash" aria-hidden="true">
+    <div class="bs-inner">
+      <img class="bs-icon" src="icons/icon-192.png" alt="" />
+      <h1 class="bs-title">담다</h1>
+      <p class="bs-sub">하루를 담는 기록장</p>
+      <div class="bs-bar"></div>
+    </div>
+  </div>
   <div class="app">
     <header class="app-head">
       <button class="icon-btn menu-btn" id="menuBtn" aria-label="메뉴 열기" aria-haspopup="dialog"><i></i><i></i><i></i></button>

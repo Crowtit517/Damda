@@ -1258,9 +1258,10 @@ a.pill-btn { text-decoration: none; color: var(--text); }
 :root.desk-app .app-head button, :root.desk-app .desk-tabs button { -webkit-app-region: no-drag; app-region: no-drag; }
 :root.desk-app main { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px 20px; display: flex; flex-direction: column; }
 
-/* 캘린더: 남은 높이를 다 쓰고, 날짜 칸이 창 크기에 맞춰 늘고 줄어든다 */
-:root.desk-app #view-calendar:not([hidden]) { flex: 1; min-height: 460px; display: flex; flex-direction: column; }
-:root.desk-app #view-calendar .grid { flex: 1; min-height: 0; grid-auto-rows: minmax(0, 1fr); gap: 0; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+/* 캘린더: 남은 높이를 다 쓰고, 날짜 칸이 창 크기에 맞춰 늘고 줄어든다.
+   칸은 내용(날짜·점·금액·할 일)이 다 들어가는 84px보다 작아지지 않고, 창이 작으면 캘린더를 아래로 내려 본다 */
+:root.desk-app #view-calendar:not([hidden]) { flex: 1 0 auto; display: flex; flex-direction: column; }
+:root.desk-app #view-calendar .grid { flex: 1 0 auto; grid-auto-rows: minmax(84px, 1fr); gap: 0; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
 :root.desk-app #view-calendar .cell {
   min-height: 0; border-radius: 0; background: transparent; padding: 6px 8px;
   border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
@@ -1300,4 +1301,58 @@ a.pill-btn { text-decoration: none; color: var(--text); }
 :root.desk-app #view-tasks:not([hidden]), :root.desk-app #view-ledger:not([hidden]) {
   position: fixed; top: var(--desk-bar-h); bottom: 0; right: 0; width: var(--desk-side); z-index: 50;
   overflow-y: auto; padding: 16px 20px 24px; background: var(--card); border-left: 1px solid var(--line);
+}
+/* 메뉴·설정 같은 창이 열려 있으면 위쪽 줄의 '끌어서 창 옮기기'를 끈다 (켜 두면 그 자리에 있는 창의 ✕가 눌리지 않는다) */
+:root.desk-app body:has(.modal.open) .app-head,
+:root.desk-app body:has(.modal.open) .desk-tabs { -webkit-app-region: no-drag; app-region: no-drag; }
+
+/* ==== 시작 화면 (홈 화면에 설치한 앱으로 열 때만, js/ui/bootSplash.js) ==== */
+.boot-splash { display: none; }
+@media (display-mode: standalone) {
+  :root:not(.desk-app) .boot-splash {
+    position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; text-align: center; color: #fff;
+    background:
+      radial-gradient(120vw 70vh at 10% -10%, rgba(255, 255, 255, 0.26), transparent 60%),
+      radial-gradient(100vw 60vh at 100% 110%, rgba(255, 190, 230, 0.22), transparent 60%),
+      linear-gradient(160deg, #6b74c9 0%, #7a5aa8 100%);
+    animation: bs-safety 0.4s 6s forwards; /* 앱이 멈춰도 6초 뒤엔 걷힌다 */
+  }
+}
+.boot-splash::after {
+  content: ''; position: absolute; inset: -40%; pointer-events: none;
+  background: linear-gradient(115deg, transparent 42%, rgba(255, 255, 255, 0.2) 50%, transparent 58%);
+  transform: translateX(-60%); animation: bs-sweep 1.6s 0.35s ease-in-out forwards;
+}
+.boot-splash .bs-inner { position: relative; z-index: 1; display: grid; justify-items: center; }
+.boot-splash .bs-icon {
+  width: 76px; height: 76px; border-radius: 22px; margin-bottom: 16px;
+  box-shadow: 0 10px 26px -8px rgba(30, 20, 80, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.35);
+  opacity: 0; transform: scale(0.7); animation: bs-pop 0.6s 0.1s cubic-bezier(.3, 1.5, .5, 1) forwards;
+}
+.boot-splash .bs-title {
+  margin: 0; font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 56px; line-height: 1.05; letter-spacing: -1px;
+  text-shadow: 0 2px 14px rgba(30, 20, 80, 0.3);
+  opacity: 0; transform: translateY(10px); animation: bs-rise 0.6s 0.22s ease-out forwards;
+}
+.boot-splash .bs-sub {
+  margin: 12px 0 0; font-size: 15px; letter-spacing: 5px; color: rgba(255, 255, 255, 0.88);
+  opacity: 0; transform: translateY(8px); animation: bs-rise 0.6s 0.36s ease-out forwards;
+}
+.boot-splash .bs-bar {
+  position: relative; width: 120px; height: 3px; margin-top: 28px; border-radius: 3px; overflow: hidden;
+  background: rgba(255, 255, 255, 0.22); opacity: 0; animation: bs-rise 0.5s 0.5s ease-out forwards;
+}
+.boot-splash .bs-bar::before {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 40%; border-radius: 3px;
+  background: linear-gradient(90deg, transparent, #fff, transparent); animation: bs-load 1.1s 0.5s ease-in-out infinite;
+}
+:root:not(.desk-app) .boot-splash.leave { animation: bs-leave 0.5s cubic-bezier(.4, 0, .2, 1) forwards; }
+@keyframes bs-pop { to { opacity: 1; transform: none; } }
+@keyframes bs-rise { to { opacity: 1; transform: none; } }
+@keyframes bs-sweep { to { transform: translateX(60%); } }
+@keyframes bs-load { from { left: -40%; } to { left: 100%; } }
+@keyframes bs-leave { to { opacity: 0; transform: scale(1.04); filter: blur(6px); visibility: hidden; } }
+@keyframes bs-safety { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .boot-splash *, .boot-splash::after, .boot-splash .bs-bar::before { animation-duration: 0.01s !important; animation-delay: 0s !important; }
 }
