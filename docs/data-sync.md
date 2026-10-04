@@ -195,3 +195,10 @@
 - 위젯은 같은 주소 아래(`__damda_widget.html`, desktop/widget.html을 PC 앱이 끼워 줌)라 **같은 IndexedDB**를 쓴다 → 위젯에서 고치면 담다에 바로(BroadcastChannel)
 - X를 누르면: 입력칸에 쓰던 글자를 `ple-desk-drafts`에 → 기기 저장 마무리(pagehide) → 연결돼 있으면 드라이브 올리기(최대 3초, 못 올리면 다음에 열 때) → 담다·위젯 끝내기. 다음에 열면 쓰던 글자를 한 번 채우고 지운다
 - 구글 로그인은 **기본 브라우저**에서 (앱 안 로그인은 구글이 막는다): 구글 '데스크톱 앱' 클라이언트 + PKCE, `http://127.0.0.1:임시포트`로 돌아온다(`desktop/googleAuth.js`). 다시 받기 권한은 Windows 암호화(safeStorage/DPAPI)로 `%APPDATA%\Damda\google-accounts.json`에 계정별로 보관 → 다음부터 창 없이 새 토큰, 기본 계정은 만료 5분 전에 미리. 웹 코드는 `requestToken()` 한 곳만 PC 앱이면 `window.desk.googleToken`으로 바꾼다. 조용히 못 받으면(`silent`) 브라우저를 열지 않고 [다시 로그인]으로. 계정 빼기·연결 끊기 = 보관 삭제 + 구글에 권한 돌려줌. 그 밖의 링크도 기본 브라우저로
+
+## 14. 갤럭시 앱 (Phase 5, 10-05)
+
+- `mobile/` = Capacitor 6. 공개 사이트를 연다 → 저장소는 그 앱 안의 것(크롬과 따로). 구글을 연결하면 드라이브에서 불러온다
+- **로그인**: `js/sync/google.js`의 `requestToken()`이 갤럭시 앱이면 `DamdaGoogle.token()`(mobile/…/GoogleAuthPlugin.java, 구글 AuthorizationClient). 계정 고르기 → 동의 → 접근 토큰. 다음부터 같은 계정·권한은 화면 없이(`silent`). 계정 빼기·연결 끊기 = 구글에 권한 돌려줌(oauth2.googleapis.com/revoke)
+- **알림** (`js/reminders.js`): 앞으로 7일, 최대 60개를 폰 알람(LocalNotifications, 정확한 알람·잠자기 중에도)에 예약. 기록이 바뀌거나 설정을 바꾸거나 앱으로 돌아오면 다시 맞춘다(같은 알림은 같은 번호). 할 일 `alarm: 'HH:MM'`, 반복 할 일 `alarms: ['09:00', '']`(회차마다). 일정은 담다에만 있는 것(store `events`)만 — 기본 10분 전, '1시간 전' 등, 종일은 구글과 같은 뜻(그날 0시보다 N분 전, 기본은 그날 9시)
+- 개발: `DAMDA_DEV=1 npx cap sync android` → 폰이 PC의 localhost:5500을 연다(`adb reverse tcp:5500 tcp:5500`)

@@ -4,9 +4,14 @@
 // 기본 권한: 드라이브의 '앱 전용 숨김 폴더'만(drive.appdata) + 어떤 계정인지 보여주기 위한 이메일.
 // 추가 권한(예: 캘린더 보기)은 사용자가 켰을 때만 함께 요청하고, 다시 로그인할 때도 계속 요청한다.
 // PC 앱(desktop/)에서는 로그인을 기본 브라우저에서 하고, 다시 받기 권한을 PC 앱이 보관해 조용히 새 토큰을 받는다
-// (앱 안 로그인 창은 구글이 막는다). 이 파일의 나머지 동작은 웹과 같다.
+// (앱 안 로그인 창은 구글이 막는다). 갤럭시 앱(mobile/)은 폰에 로그인된 구글 계정으로 받는다(구글 플레이 서비스가 갱신).
+// 이 파일의 나머지 동작은 웹과 같다.
 import { GOOGLE_CLIENT_ID } from '../config.js';
 import { isDesk } from '../desk.js';
+import { isNative, plugin } from '../native.js';
+
+/** 앱(PC·갤럭시)이 로그인을 맡는지. 그러면 만료돼도 창 없이 바로 다시 받을 수 있다 */
+export const appLogin = isDesk || isNative;
 
 const BASE_SCOPES = [
   'https://www.googleapis.com/auth/drive.appdata',
@@ -50,7 +55,7 @@ export class NeedLogin extends Error {
   constructor() { super('구글 로그인이 필요해요'); }
 }
 
-export const isConfigured = () => isDesk || !!GOOGLE_CLIENT_ID;
+export const isConfigured = () => appLogin || !!GOOGLE_CLIENT_ID;
 export const hasToken = () => !!token && Date.now() < tokenExp;
 export const clearToken = () => {
   token = null;
@@ -82,6 +87,11 @@ export async function requestToken({ scopes, hint = '', prompt = '', silent = fa
   // PC 앱: 보관된 권한이 있으면 창 없이, 없으면 기본 브라우저에서 로그인 → { token, exp, scope, email }
   // silent: 창 없이만 시도 (안 되면 브라우저를 열지 않고 실패)
   if (isDesk) return window.desk.googleToken({ scopes, hint, prompt, silent });
+  // 갤럭시 앱: 폰의 구글 계정으로 (처음·권한 추가 때만 동의 화면)
+  if (isNative) {
+    try { return await plugin('DamdaGoogle').token({ scopes, hint, prompt, silent }); }
+    catch (e) { throw new Error(e?.message || '구글 로그인을 하지 못했어요.'); }
+  }
   if (!isConfigured()) throw new Error('구글 연결 설정(클라이언트 ID)이 아직 없어요.');
   await loadGis();
   return new Promise((resolve, reject) => {
@@ -106,12 +116,12 @@ export async function signIn(hintEmail = '', { silent = false } = {}) {
   tokenExp = t.exp;
   grantedScope = t.scope;
   keepToken();
-  if (isDesk) scheduleDeskRefresh(t.email || hintEmail);
+  if (appLogin) scheduleDeskRefresh(t.email || hintEmail);
   window.dispatchEvent(new Event('ple:google-signin'));
   return token;
 }
 
-// PC 앱: 기본 계정 토큰이 끝나기 5분 전에 창 없이 새로 받아 둔다 (로그인이 끊기지 않게)
+// 앱(PC·갤럭시): 기본 계정 토큰이 끝나기 5분 전에 창 없이 새로 받아 둔다 (로그인이 끊기지 않게)
 let deskTimer = null;
 function scheduleDeskRefresh(email) {
   clearTimeout(deskTimer);
@@ -126,10 +136,12 @@ function scheduleDeskRefresh(email) {
   }, Math.max(60000, tokenExp - Date.now() - 5 * 60000));
 }
 
-/** PC 앱: 이 PC에 보관한 그 계정의 로그인 권한을 지운다 (계정 빼기·연결 끊기) */
-export function forgetAccount(email) {
+/** 앱: 그 계정의 로그인 권한을 지운다 (계정 빼기·연결 끊기). PC는 보관한 권한 삭제, 갤럭시는 구글에 권한을 돌려준다 */
+export function forgetAccount(email, accessToken = '') {
   if (isDesk) window.desk.googleForget(email);
+  if (isNative && accessToken) revokeOnGoogle(accessToken);
 }
+const revokeOnGoogle = t => fetch('https://oauth2.googleapis.com/revoke', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `token=${encodeURIComponent(t)}` }).catch(() => {});
 
 // 할 일·가계부를 담는 곳이 추가 계정이면, 드라이브는 그 계정의 토큰을 쓴다 (gcal.js가 정해 준다)
 let driveProvider = null; // { get(): 토큰|null, invalidate(), relogin(): Promise }
@@ -163,5 +175,6 @@ export function signOut() {
   try { if (token) window.google?.accounts?.oauth2?.revoke(token, () => {}); } catch {}
   clearTimeout(deskTimer);
   if (isDesk) window.desk.googleForget(''); // PC 앱: 보관한 로그인 권한을 모두 지운다
+  if (isNative && token) revokeOnGoogle(token); // 갤럭시 앱: 구글에 권한을 돌려준다
   clearToken();
 }

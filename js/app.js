@@ -18,6 +18,8 @@ import { openGuide } from './parts/guide.js';
 import { isDesk } from './desk.js';
 import { mountDeskSide, markDeskTab } from './parts/deskSide.js';
 import { hideBootSplash } from './ui/bootSplash.js';
+import { startReminders } from './reminders.js';
+import { isNative } from './native.js';
 import { todayKey, loadPref, savePref, escapeHtml } from './utils.js';
 
 migrateCategories();
@@ -279,7 +281,7 @@ function settingsHtml() {
           </select>` : '<span class="set-empty">이 기기 (구글 계정을 연결하면 고를 수 있어요)</span>'}
       </label>
       ${touch ? switchRow('vibrate', '📳', '진동', '꾹 누르기·옮기기 같은 손끝 반응') : ''}
-      ${switchRow('notify', '🔔', '알림', touch ? '일정·반복 할 일 알림 · 소리는 폰 기본 알림음' : '일정 알림 · PC는 구글 캘린더가 알려줘요')}
+      ${switchRow('notify', '🔔', '알림', isNative ? '할 일·담다 일정 알림 · 폰 기본 알림음 (구글 캘린더 일정은 캘린더 앱이 알려줘요)' : isDesk ? '할 일·담다 일정 알림 · 담다가 켜져 있을 때 소리 없이' : '알림 시간을 정한 할 일은 갤럭시 담다 앱에서 울려요')}
       <p class="muted small set-foot">알림은 ${touch ? '갤럭시 앱' : '구글 캘린더 연결'}부터 울려요. ${touch ? '' : 'PC에는 소리·진동이 없어요. '}설정은 이 기기에만 적용돼요.</p>
       ${acc ? '<button type="button" class="pill-btn danger-text wide" data-act="google-disconnect">구글 연결 끊기</button>' : ''}
     </div>`;
@@ -403,6 +405,7 @@ async function onPanelClick(e) {
     const on = !getSetting(key);
     setSetting(key, on);
     if (key === 'vibrate' && on) buzz(15);
+    window.dispatchEvent(new Event('ple:settingchange')); // 알림 다시 맞추기 등
     set.setAttribute('aria-checked', on);
     set.querySelector('.switch').classList.toggle('on', on);
     return;
@@ -518,6 +521,7 @@ if ('serviceWorker' in navigator) {
 if (isDesk) mountDeskSide(showTab);
 showTab(tab);
 hideBootSplash();
+startReminders();
 recordRecurring();
 // 할 일·가계부 담는 곳이 기본 계정이 아니면 알려 준다 (기록이 사라진 것처럼 오해하지 않게)
 if (dataPlace()) {

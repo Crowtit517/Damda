@@ -1306,18 +1306,18 @@ a.pill-btn { text-decoration: none; color: var(--text); }
 :root.desk-app body:has(.modal.open) .app-head,
 :root.desk-app body:has(.modal.open) .desk-tabs { -webkit-app-region: no-drag; app-region: no-drag; }
 
-/* ==== 시작 화면 (홈 화면에 설치한 앱으로 열 때만, js/ui/bootSplash.js) ==== */
-.boot-splash { display: none; }
-@media (display-mode: standalone) {
-  :root:not(.desk-app) .boot-splash {
-    position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; text-align: center; color: #fff;
-    background:
-      radial-gradient(120vw 70vh at 10% -10%, rgba(255, 255, 255, 0.26), transparent 60%),
-      radial-gradient(100vw 60vh at 100% 110%, rgba(255, 190, 230, 0.22), transparent 60%),
-      linear-gradient(160deg, #6b74c9 0%, #7a5aa8 100%);
-    animation: bs-safety 0.4s 6s forwards; /* 앱이 멈춰도 6초 뒤엔 걷힌다 */
-  }
+/* ==== 시작 화면 (홈 화면에 설치한 앱 · 갤럭시 앱으로 열 때만, js/ui/bootSplash.js) ==== */
+.boot-splash {
+  display: none;
+  position: fixed; inset: 0; z-index: 200; place-items: center; text-align: center; color: #fff;
+  background:
+    radial-gradient(120vw 70vh at 10% -10%, rgba(255, 255, 255, 0.26), transparent 60%),
+    radial-gradient(100vw 60vh at 100% 110%, rgba(255, 190, 230, 0.22), transparent 60%),
+    linear-gradient(160deg, #6b74c9 0%, #7a5aa8 100%);
+  animation: bs-safety 0.4s 6s forwards; /* 앱이 멈춰도 6초 뒤엔 걷힌다 */
 }
+@media (display-mode: standalone) { :root:not(.desk-app) .boot-splash { display: grid; } }
+:root.native-app .boot-splash { display: grid; }
 .boot-splash::after {
   content: ''; position: absolute; inset: -40%; pointer-events: none;
   background: linear-gradient(115deg, transparent 42%, rgba(255, 255, 255, 0.2) 50%, transparent 58%);
@@ -1346,7 +1346,7 @@ a.pill-btn { text-decoration: none; color: var(--text); }
   content: ''; position: absolute; top: 0; bottom: 0; width: 40%; border-radius: 3px;
   background: linear-gradient(90deg, transparent, #fff, transparent); animation: bs-load 1.1s 0.5s ease-in-out infinite;
 }
-:root:not(.desk-app) .boot-splash.leave { animation: bs-leave 0.5s cubic-bezier(.4, 0, .2, 1) forwards; }
+:root .boot-splash.leave { animation: bs-leave 0.5s cubic-bezier(.4, 0, .2, 1) forwards; }
 @keyframes bs-pop { to { opacity: 1; transform: none; } }
 @keyframes bs-rise { to { opacity: 1; transform: none; } }
 @keyframes bs-sweep { to { transform: translateX(60%); } }
@@ -1356,3 +1356,11 @@ a.pill-btn { text-decoration: none; color: var(--text); }
 @media (prefers-reduced-motion: reduce) {
   .boot-splash *, .boot-splash::after, .boot-splash .bs-bar::before { animation-duration: 0.01s !important; animation-delay: 0s !important; }
 }
+
+/* ---- 알림 시간 (할 일 · 반복 할 일, 10-05) ---- */
+.alarm-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 13px; color: var(--text-soft); flex-wrap: wrap; }
+.alarm-row input, .r-alarm-field input {
+  min-height: 34px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); padding: 0 8px; font: inherit;
+}
+.repeat-row.alarms { gap: 8px; flex-wrap: wrap; }
+.r-alarm-field { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-soft); }

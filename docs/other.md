@@ -80,3 +80,10 @@
 - 시작 화면: PC 앱은 `desktop/splash.html`, 폰(홈 화면 앱)은 `js/ui/bootSplash.js`. 처음 만든 시험판은 `test/splash-demo/`(`시작 화면 보기.bat`)
 - 시험: `test/pc_qa.mjs`(PC 전체 65개, 개발 모드에서), `test/mobile_splash.mjs`(폰 시작 화면), `test/web_regress.mjs`(폰·웹 화면이 그대로인지)
 - `test/`: 개발 중 쓴 시험 스크립트(가짜 구글 서버로 검증)·화면 사진·PC 시험판과 그 데이터(`test/damda-desktop/prototype-data.json`). 앱은 쓰지 않는다
+
+## 8. 갤럭시 앱 만들기·나눠 주기 (10-05)
+
+- 코드: `mobile/` (Capacitor 6). `cd mobile` → `npm install` → `npx cap sync android` → `cd android` → `gradlew assembleDebug` (JAVA_HOME = 안드로이드 스튜디오의 jbr) → `app/build/outputs/apk/debug/app-debug.apk`
+- 구글 로그인 설정(한 번, 사용자): 콘솔 → OAuth 클라이언트 ID → 유형 **Android** → 패키지 `io.github.crowtit517.damda` + 서명 SHA-1. 지금은 이 PC의 시험 서명 지문을 등록했다. 다른 사람에게 나눠 줄 APK는 **정식 서명 열쇠(keystore)**를 만들고 그 지문을 하나 더 등록한다. 열쇠와 비밀번호는 git에 넣지 않고 따로 백업(잃어버리면 앱을 업데이트할 수 없음)
+- 설치: 시험할 땐 개발자 옵션 → USB 디버깅 + `adb install`. 나눠 줄 땐 APK 파일을 GitHub Releases에 올리고, 받는 사람은 내려받아 설치("출처를 알 수 없는 앱" 허용 한 번). 개발자 모드는 필요 없음
+- 처음 열 때 "알림 허용"을 묻는다. 정확한 알람은 캘린더 앱 용도라 자동 허용

@@ -47,6 +47,9 @@ export const progressOf = tasks => {
 // 반복 할 일은 '밀린 할 일'에 넣지 않는다 (매일 약이 쌓이면 안 되므로)
 const overdueTasks = key => store.list('tasks', t => t.date < key && !t.done && !t.movedTo && !t.ruleId);
 
+// 알림 시간 보이기: '09:00' → '오전 9:00'
+const alarmLabel = v => { const [h, m] = v.split(':').map(Number); return `${h < 12 ? '오전' : '오후'} ${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')}`; };
+
 function taskRowHtml(t, { checklist }) {
   const c = categoryById(t.category, 'task');
   const rule = t.ruleId ? store.get('taskRules', t.ruleId) : null;
@@ -57,7 +60,8 @@ function taskRowHtml(t, { checklist }) {
         <input type="checkbox"${t.done ? ' checked' : ''} />
         <span class="task-main">
           <span class="task-title">${escapeHtml(t.title)}${t.label ? ` <span class="task-label">${escapeHtml(t.label)}</span>` : ''}</span>
-          ${rule ? `<span class="task-meta">${repeatLabel(rule)}${streak > 1 ? ` · 🔥 ${streak}일 연속` : ''}</span>` : ''}
+          ${rule ? `<span class="task-meta">${repeatLabel(rule)}${(rule.alarms || []).some(Boolean) ? ` · ⏰ ${rule.alarms.filter(Boolean).map(alarmLabel).join(', ')}` : ''}${streak > 1 ? ` · 🔥 ${streak}일 연속` : ''}</span>` : ''}
+          ${!rule && t.alarm ? `<span class="task-meta">⏰ ${alarmLabel(t.alarm)}</span>` : ''}
         </span>
       </label>
       ${t.movedTo ? '<span class="badge moved">옮김</span>' : ''}
@@ -129,7 +133,8 @@ export function renderTasks(container, key, opts = {}) {
         <button type="button" class="repeat-toggle${rep ? ' on' : ''}" data-act="repeat-toggle" aria-pressed="${!!rep}" title="반복">반복</button>
         <button class="primary-btn">추가</button>
       </div>
-      ${rep ? `<div class="repeat-box">${repeatBoxHtml(rep)}</div>` : ''}
+      ${rep ? `<div class="repeat-box">${repeatBoxHtml(rep)}</div>` : `
+        <label class="alarm-row"><span aria-hidden="true">⏰</span> 알림 <input class="task-alarm" type="time" aria-label="알림 시간 (선택)" /><span class="muted small">선택 · 폰 담다 앱에서 울려요</span></label>`}
       <p class="form-error" hidden></p>
     </form>`;
 
@@ -183,7 +188,8 @@ function bind(container) {
     const rep = repeats.get(container.id);
     refocusId = container.id;
     if (!rep) {
-      store.put('tasks', { date: key, title, category, done: false });
+      const alarm = e.target.querySelector('.task-alarm')?.value || '';
+      store.put('tasks', { date: key, title, category, done: false, ...(alarm ? { alarm } : {}) });
       return;
     }
     try {

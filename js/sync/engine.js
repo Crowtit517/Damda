@@ -10,7 +10,6 @@
 import { store, dataPlace } from '../store.js';
 import * as googleApi from './google.js';
 import * as driveApi from './drive.js';
-import { isDesk } from '../desk.js';
 import { loadPref, savePref } from '../utils.js';
 
 const MODE_KEY = 'ple-sync-mode';
@@ -153,8 +152,8 @@ let autoGaveUp = false;
 function armAutoRelogin() {
   if (autoArmed || autoGaveUp || !isConnected()) return;
   autoArmed = true;
-  // PC 앱: 클릭을 기다리지 않고 창 없이 바로 다시 받는다. 안 되면 [다시 로그인] 버튼에 맡긴다 (브라우저는 열지 않음)
-  if (isDesk) {
+  // 앱(PC·갤럭시): 클릭을 기다리지 않고 창 없이 바로 다시 받는다. 안 되면 [다시 로그인] 버튼에 맡긴다 (브라우저는 열지 않음)
+  if (adapters.google.appLogin) {
     setTimeout(async () => {
       autoArmed = false;
       if ((adapters.google.hasDriveToken ? adapters.google.hasDriveToken() : adapters.google.hasToken()) || !isConnected()) return;

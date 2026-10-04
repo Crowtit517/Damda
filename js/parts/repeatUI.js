@@ -19,7 +19,7 @@ function rangeText(a, b) {
 
 export function defaultRepeatState(key) {
   const d = keyToDate(key);
-  return { type: 'daily', days: [d.getDay()], day: String(d.getDate()), times: [''], endMode: 'none', startDate: key, endDate: '' };
+  return { type: 'daily', days: [d.getDay()], day: String(d.getDate()), times: [''], alarms: [], endMode: 'none', startDate: key, endDate: '' };
 }
 
 export function stateFromRule(rule) {
@@ -27,6 +27,7 @@ export function stateFromRule(rule) {
   return {
     type: r.type, days: r.days || [], day: String(r.day || '1'),
     times: rule.times?.length ? [...rule.times] : [''],
+    alarms: [...(rule.alarms || [])],
     endMode: rule.endDate ? 'date' : 'none', startDate: rule.startDate, endDate: rule.endDate || '',
   };
 }
@@ -37,7 +38,9 @@ export function repeatFromState(s) {
   if (s.type === 'weekly') repeat.days = [...s.days];
   if (s.type === 'monthly') repeat.day = s.day;
   if (s.endMode === 'date' && !s.endDate) throw new Error('언제까지 할지 끝나는 날을 골라주세요.');
-  return { repeat, times: s.times, startDate: s.startDate, endDate: s.endMode === 'date' ? s.endDate : null };
+  // 알림 시간: 회차마다 (비우면 알림 없음). 울리는 건 갤럭시 담다 앱 (js/reminders.js)
+  const alarms = s.times.map((_, i) => s.alarms?.[i] || '');
+  return { repeat, times: s.times, alarms: alarms.some(Boolean) ? alarms : [], startDate: s.startDate, endDate: s.endMode === 'date' ? s.endDate : null };
 }
 
 export function repeatBoxHtml(s) {
@@ -65,6 +68,10 @@ export function repeatBoxHtml(s) {
       <div class="repeat-row times">
         ${s.times.map((t, i) => `<input class="r-time" data-i="${i}" type="text" maxlength="8" value="${escapeHtml(t)}" placeholder="${i + 1}번째" aria-label="${i + 1}번째 이름" />`).join('')}
       </div>` : ''}
+    <div class="repeat-label">알림 <span class="muted small">(선택 · 폰 담다 앱에서 울려요)</span></div>
+    <div class="repeat-row alarms">
+      ${s.times.map((t, i) => `<label class="r-alarm-field">${count > 1 ? `<span>${escapeHtml(t || `${i + 1}번째`)}</span>` : '<span aria-hidden="true">⏰</span>'}<input class="r-alarm" data-i="${i}" type="time" value="${escapeHtml(s.alarms?.[i] || '')}" aria-label="${escapeHtml(t || `${i + 1}번째`)} 알림 시간" /></label>`).join('')}
+    </div>
     <div class="repeat-label">기간</div>
     <div class="repeat-row">
       <button type="button" class="seg-chip${s.endMode === 'none' ? ' on' : ''}" data-rend="none" aria-pressed="${s.endMode === 'none'}">반복</button>
@@ -99,6 +106,7 @@ export function bindRepeatBox(root, getState) {
       // 기본 이름(아침·점심·저녁)은 횟수에 맞게 새로 채우고, 사용자가 직접 바꾼 이름만 그 자리에 남긴다
       const isDefault = v => !v || Object.values(DEFAULT_TIMES).flat().includes(v);
       s.times = n === s.times.length ? s.times : DEFAULT_TIMES[n].map((d, i) => (isDefault(s.times[i]) ? d : s.times[i]));
+      s.alarms = (s.alarms || []).slice(0, n);
     }
     if (t.dataset.rend) s.endMode = t.dataset.rend;
     redraw(box);
@@ -108,6 +116,7 @@ export function bindRepeatBox(root, getState) {
     const s = box && getState(box);
     if (!s) return;
     if (e.target.matches('.r-time')) s.times[Number(e.target.dataset.i)] = e.target.value;
+    if (e.target.matches('.r-alarm')) (s.alarms ||= [])[Number(e.target.dataset.i)] = e.target.value;
   });
   root.addEventListener('change', e => {
     const box = e.target.closest('.repeat-box');
