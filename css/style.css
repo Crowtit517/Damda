@@ -1225,3 +1225,11 @@ a.pill-btn { text-decoration: none; color: var(--text); }
 .set-select { display: flex; flex-direction: column; gap: 6px; padding: 8px; }
 .set-select select { min-height: 40px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); padding: 0 8px; font: inherit; font-size: 14px; }
 .set-card > .pill-btn.wide { margin: 6px 8px 8px; width: calc(100% - 16px); }
+
+/* ---- 설정 창 (화면 위쪽에 작은 창) ---- */
+#settingsModal { place-items: start center; padding-top: max(16px, 8vh); }
+.settings-box { max-height: calc(100dvh - 16vh); overflow-y: auto; }
+.settings-box .set-card { background: transparent; padding: 0; }
+.settings-open { justify-content: space-between; }
+.settings-open .chev { font-size: 20px; color: var(--text-soft); }
+.set-empty { font-size: 13px; color: var(--text-soft); background: var(--surface); border-radius: 10px; padding: 10px; }

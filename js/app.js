@@ -3,7 +3,7 @@ import { migrateCategories } from './categories.js';
 import { store, dataPlace } from './store.js';
 import { purgeSamples } from './sample.js';
 import { runRecurring } from './recurring.js';
-import { closeOverlay, toggleOverlay, closeOnBackdrop, topOverlay, isOpen } from './ui/overlay.js';
+import { openOverlay, closeOverlay, toggleOverlay, closeOnBackdrop, topOverlay, isOpen } from './ui/overlay.js';
 import { toast } from './ui/toast.js';
 import { choiceDialog } from './ui/dialog.js';
 import * as sync from './sync/engine.js';
@@ -236,20 +236,20 @@ function settingsHtml() {
   const place = dataPlace();
   return `
     <div class="set-card">
-      ${writable.length > 1 ? `
-        <label class="set-select">
-          <span class="side-text"><strong>일정 담는 곳</strong><span class="muted small">담다에서 새로 만든 일정이 들어갈 캘린더를 정하는 곳이에요</span></span>
+      <label class="set-select">
+        <span class="side-text"><strong>일정 담는 곳</strong><span class="muted small">담다에서 새로 만든 일정이 들어갈 캘린더를 정하는 곳이에요</span></span>
+        ${writable.length ? `
           <select data-gcal-target>
             ${writable.map(c => `<option value="${escapeHtml(`${c.acct}|${c.id}`)}"${target && target.acct === c.acct && target.id === c.id ? ' selected' : ''}>${escapeHtml(c.name)}${c.name === c.accountEmail ? '' : ` (${escapeHtml(c.accountEmail)})`}</option>`).join('')}
-          </select>
-        </label>` : ''}
-      ${accts.length > 1 ? `
-        <label class="set-select">
-          <span class="side-text"><strong>할 일·가계부 담는 곳</strong><span class="muted small">할 일과 가계부를 담고, 불러와요</span></span>
+          </select>` : `<span class="set-empty">${acc ? '구글 캘린더 권한을 허락하면 고를 수 있어요' : '구글 계정을 연결하면 고를 수 있어요'}</span>`}
+      </label>
+      <label class="set-select">
+        <span class="side-text"><strong>할 일·가계부 담는 곳</strong><span class="muted small">할 일과 가계부를 담고, 불러와요</span></span>
+        ${accts.length ? `
           <select data-data-place>
             ${accts.map(a => { const v = a.main ? '' : a.email; return `<option value="${escapeHtml(v)}"${v === place ? ' selected' : ''}>${escapeHtml(a.email || '기본 계정')}${a.main ? ' (기본)' : ''}</option>`; }).join('')}
-          </select>
-        </label>` : ''}
+          </select>` : '<span class="set-empty">이 기기 (구글 계정을 연결하면 고를 수 있어요)</span>'}
+      </label>
       ${touch ? switchRow('vibrate', '📳', '진동', '꾹 누르기·옮기기 같은 손끝 반응') : ''}
       ${switchRow('notify', '🔔', '알림', touch ? '일정·반복 할 일 알림 · 소리는 폰 기본 알림음' : '일정 알림 · PC는 구글 캘린더가 알려줘요')}
       <p class="muted small set-foot">알림은 ${touch ? '갤럭시 앱' : '구글 캘린더 연결'}부터 울려요. ${touch ? '' : 'PC에는 소리·진동이 없어요. '}설정은 이 기기에만 적용돼요.</p>
@@ -279,17 +279,37 @@ function renderMenu() {
       <div class="side-label">구글 캘린더</div>
       <div class="gcal-slot">${gcalCardHtml()}</div>
       <div class="side-label">설정</div>
-      <div class="set-slot">${settingsHtml()}</div>
+      <button type="button" class="side-item settings-open" data-act="open-settings" aria-haspopup="dialog">
+        <span class="side-text"><strong>⚙️ 설정</strong><span class="muted small">담는 곳 · 알림 · 진동 · 구글 연결 끊기</span></span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
     </div>`;
 }
 
-// 메뉴가 열려 있을 때 칸만 다시 그린다 (스크롤 위치 유지)
+// ---- 설정 창 (☰ 메뉴의 [⚙️ 설정]을 누르면 화면 위쪽에 작은 창으로 열린다) ----
+const settingsModal = document.getElementById('settingsModal');
+closeOnBackdrop(settingsModal);
+
+function openSettings() {
+  settingsModal.innerHTML = `
+    <div class="modal-box wide settings-box">
+      <div class="modal-head">
+        <strong>설정</strong>
+        <button type="button" class="icon-btn close-btn" data-close aria-label="닫기">✕</button>
+      </div>
+      <div class="set-slot">${settingsHtml()}</div>
+    </div>`;
+  openOverlay({ el: settingsModal, layer: 2 });
+}
+
+// 열려 있는 메뉴·설정 창의 칸만 다시 그린다 (스크롤 위치 유지)
 function refreshMenuSlots() {
-  if (!isOpen(menu)) return;
-  const put = (sel, html) => { const el = menu.querySelector(sel); if (el) el.innerHTML = html; };
-  put('.sync-slot', syncCardHtml());
-  put('.gcal-slot', gcalCardHtml());
-  put('.set-slot', settingsHtml());
+  const put = (root, sel, html) => { const el = root.querySelector(sel); if (el) el.innerHTML = html; };
+  if (isOpen(menu)) {
+    put(menu, '.sync-slot', syncCardHtml());
+    put(menu, '.gcal-slot', gcalCardHtml());
+  }
+  if (isOpen(settingsModal)) put(settingsModal, '.set-slot', settingsHtml());
 }
 
 sync.onStatus(() => { renderSyncPill(); refreshMenuSlots(); });
@@ -333,7 +353,7 @@ async function changeDataPlace(value, select) {
   }
 }
 
-menu.addEventListener('change', e => {
+function onPanelChange(e) {
   const target = e.target.closest('[data-gcal-target]');
   if (target) {
     const [acct, ...rest] = target.value.split('|');
@@ -343,10 +363,10 @@ menu.addEventListener('change', e => {
   }
   const place = e.target.closest('[data-data-place]');
   if (place) changeDataPlace(place.value, place);
-});
+}
 
-menu.addEventListener('click', async e => {
-  if (e.target.closest('[data-close]')) return closeOverlay(menu);
+async function onPanelClick(e) {
+  if (e.target.closest('[data-close]')) return closeOverlay(e.currentTarget);
   const screen = e.target.closest('[data-screen]');
   if (screen) { closeOverlay(menu); return showTab(screen.dataset.screen); }
   const set = e.target.closest('[data-set]');
@@ -364,6 +384,7 @@ menu.addEventListener('click', async e => {
 
   const act = e.target.closest('[data-act]')?.dataset.act;
   if (!act) return;
+  if (act === 'open-settings') { openSettings(); return; }
   if (act === 'toggle-accounts') { showMoreAccounts = !showMoreAccounts; refreshMenuSlots(); return; }
   if (act === 'toggle-saver') { sync.setSaver(sync.syncMode() !== 'saver'); refreshMenuSlots(); renderSyncPill(); return; }
   try {
@@ -417,7 +438,12 @@ menu.addEventListener('click', async e => {
   }
   refreshMenuSlots();
   renderSyncPill();
-});
+}
+
+for (const root of [menu, settingsModal]) {
+  root.addEventListener('change', onPanelChange);
+  root.addEventListener('click', onPanelClick);
+}
 
 // ---- 단축키 ----
 document.addEventListener('keydown', e => {
