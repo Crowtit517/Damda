@@ -1,0 +1,158 @@
+{
+  "note": "PC 시험판(Electron, localhost:5500)에서 시험할 때 쓴 데이터 (2026-10-04)",
+  "data": {
+    "version": 1,
+    "tasks": {
+      "mutn0k6q6pggbz": {
+        "date": "2026-10-04",
+        "title": "위젯에서 넣은 할 일",
+        "category": null,
+        "done": false,
+        "id": "mutn0k6q6pggbz",
+        "createdAt": 1791107256626,
+        "updatedAt": 1791112241975,
+        "deleted": false
+      },
+      "mutn0k754u2v0v": {
+        "date": "2026-10-04",
+        "title": "장보기",
+        "category": null,
+        "done": false,
+        "id": "mutn0k754u2v0v",
+        "createdAt": 1791107256641,
+        "updatedAt": 1791114745982,
+        "deleted": false
+      },
+      "mutn0l2enwifhh": {
+        "date": "2026-10-04",
+        "title": "본 앱에서 넣은 할 일",
+        "category": null,
+        "done": false,
+        "id": "mutn0l2enwifhh",
+        "createdAt": 1791107257766,
+        "updatedAt": 1791107257766,
+        "deleted": false
+      },
+      "mutpq2ougcjaky": {
+        "date": "2026-10-04",
+        "title": "달력 위젯에서 넣은 할 일",
+        "category": null,
+        "done": false,
+        "id": "mutpq2ougcjaky",
+        "createdAt": 1791111806238,
+        "updatedAt": 1791111806238,
+        "deleted": false
+      },
+      "mutpq3i500ktp8": {
+        "date": "2026-11-01",
+        "title": "다음 달 할 일",
+        "category": null,
+        "done": false,
+        "id": "mutpq3i500ktp8",
+        "createdAt": 1791111807293,
+        "updatedAt": 1791111807293,
+        "deleted": false
+      },
+      "mutq4ddm2efbb1": {
+        "date": "2026-10-04",
+        "title": "요약에서 넣은 할 일",
+        "category": null,
+        "done": false,
+        "id": "mutq4ddm2efbb1",
+        "createdAt": 1791112473274,
+        "updatedAt": 1791112473274,
+        "deleted": false
+      },
+      "mutq4er77lyndc": {
+        "date": "2026-10-04",
+        "title": "달력에서 넣은 할 일",
+        "category": null,
+        "done": false,
+        "id": "mutq4er77lyndc",
+        "createdAt": 1791112475059,
+        "updatedAt": 1791112475059,
+        "deleted": false
+      },
+      "mutqdglgwkz5pc": {
+        "date": "2026-10-04",
+        "title": "요약에서 넣은 할 일",
+        "category": null,
+        "done": false,
+        "id": "mutqdglgwkz5pc",
+        "createdAt": 1791112897348,
+        "updatedAt": 1791112897348,
+        "deleted": false
+      },
+      "mutqdhz4xrqk4n": {
+        "date": "2026-10-04",
+        "title": "달력에서 넣은 할 일",
+        "category": null,
+        "done": false,
+        "id": "mutqdhz4xrqk4n",
+        "createdAt": 1791112899136,
+        "updatedAt": 1791112899136,
+        "deleted": false
+      },
+      "mutr3f6rqvcitn": {
+        "date": "2026-10-04",
+        "title": "오른쪽에서 넣은 할 일",
+        "category": null,
+        "done": false,
+        "id": "mutr3f6rqvcitn",
+        "createdAt": 1791114108579,
+        "updatedAt": 1791114108579,
+        "deleted": false
+      }
+    },
+    "expenses": {
+      "mutn0k6r8lcb38": {
+        "date": "2026-10-04",
+        "type": "expense",
+        "category": null,
+        "amount": 4500,
+        "memo": "커피",
+        "id": "mutn0k6r8lcb38",
+        "createdAt": 1791107256627,
+        "updatedAt": 1791107256627,
+        "deleted": false
+      }
+    },
+    "events": {
+      "mutn0l2cdk015d": {
+        "title": "팀 회의",
+        "start": "2026-10-04",
+        "end": "2026-10-04",
+        "time": "15:00",
+        "id": "mutn0l2cdk015d",
+        "createdAt": 1791107257764,
+        "updatedAt": 1791107257764,
+        "deleted": false
+      },
+      "mutn0l2dewlddn": {
+        "title": "엄마 생신",
+        "start": "2026-10-04",
+        "end": "2026-10-04",
+        "id": "mutn0l2dewlddn",
+        "createdAt": 1791107257765,
+        "updatedAt": 1791107257765,
+        "deleted": false
+      }
+    },
+    "categories": {},
+    "recurring": {},
+    "taskRules": {},
+    "catFolders": {}
+  },
+  "localStorage": {
+    "ple-gscopes": "[\"https://www.googleapis.com/auth/calendar.readonly\",\"https://www.googleapis.com/auth/calendar.events\"]",
+    "ple-theme": "\"light\"",
+    "ple-month-widget-opacity": "55",
+    "ple-panel-sections": "{\"events\":true,\"tasks\":true,\"expenses\":true}",
+    "ple-sync-dirty": "true",
+    "desk-side-w": "512",
+    "ple-tab": "\"tasks\"",
+    "ple-cat-v2": "true",
+    "ple-set-money": "true",
+    "ple-widget-opacity": "63"
+  }
+}

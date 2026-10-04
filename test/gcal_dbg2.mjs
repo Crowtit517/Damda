@@ -1,0 +1,15 @@
+import { readFileSync } from 'node:fs';
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const src = readFileSync('gcal_test.mjs', 'utf8');
+const FAKE = src.slice(src.indexOf('const FAKE = `') + 14, src.indexOf('})();`;') + 5);
+const t = await fetch('http://127.0.0.1:9333/json/new?about:blank', { method: 'PUT' }).then(r => r.json());
+const ws = new WebSocket(t.webSocketDebuggerUrl); await new Promise(r => ws.addEventListener('open', r));
+let id = 0; const pending = new Map();
+ws.addEventListener('message', e => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); } });
+const send = (method, params = {}) => new Promise(r => { const i = ++id; pending.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
+const ev = async expr => { const r = await send('Runtime.evaluate', { expression: `(async () => { ${expr} })()`, awaitPromise: true, returnByValue: true }); console.log(JSON.stringify(r).slice(0,600)); return r.result?.result?.value ?? JSON.stringify(r.result?.exceptionDetails || r).slice(0, 300); };
+await send('Page.enable');
+await send('Page.addScriptToEvaluateOnNewDocument', { source: FAKE });
+await send('Page.navigate', { url: 'http://localhost:5500/' }); await sleep(2500);
+console.log(await ev(`return 1+1`)); console.log(await ev(`const g = await import('/js/sync/gcal.js'); const go = await import('/js/sync/google.js'); const tok = JSON.parse(localStorage.getItem('ple-gtoken')||'null'); return JSON.stringify({ st: g.getStatus(), hasToken: go.hasToken(), tokLeftMin: tok && Math.round((tok.exp - Date.now())/60000), fakeFail: __fakeDb().fail })`));
+ws.close(); process.exit(0);

@@ -15,6 +15,8 @@ import * as tasks from './views/tasks.js';
 import * as ledger from './views/ledger.js';
 import * as dayPanel from './views/dayPanel.js';
 import { openGuide } from './parts/guide.js';
+import { isDesk } from './desk.js';
+import { mountDeskSide, markDeskTab } from './parts/deskSide.js';
 import { todayKey, loadPref, savePref, escapeHtml } from './utils.js';
 
 migrateCategories();
@@ -39,6 +41,7 @@ let tab = new URLSearchParams(location.search).get('tab') || loadPref('ple-tab',
 if (!SCREENS[tab]) tab = 'calendar';
 
 function showTab(next) {
+  if (isDesk) return showDeskTab(next);
   tab = next;
   savePref('ple-tab', tab);
   for (const name of Object.keys(SCREENS)) document.getElementById(`view-${name}`).hidden = name !== tab;
@@ -49,12 +52,33 @@ function showTab(next) {
   s.view.render();
 }
 
+// PC 앱: 캘린더는 늘 왼쪽에 보이고, tab 은 오른쪽 구역에 무엇을 보일지 (calendar = 이 날)
+function showDeskTab(next) {
+  tab = next;
+  savePref('ple-tab', tab);
+  document.getElementById('view-calendar').hidden = false;
+  for (const name of ['tasks', 'ledger']) document.getElementById(`view-${name}`).hidden = name !== tab;
+  const panel = document.getElementById('dayPanel');
+  if (tab === 'calendar') dayPanel.openDayPanel(dayPanel.currentPanelKey() || todayKey());
+  else { panel.hidden = true; panel.classList.remove('open'); }
+  markDeskTab(tab);
+  titleEl.textContent = SCREENS.calendar.label;
+  document.title = '담다';
+  calendar.render();
+  if (tab !== 'calendar') SCREENS[tab].view.render();
+}
+
 // 데이터가 바뀌면 보이는 화면만 다시 그린다
 store.subscribe(() => {
   SCREENS[tab].view.render();
+  if (isDesk && tab !== 'calendar') calendar.render(); // PC 앱은 캘린더가 늘 보인다
   dayPanel.render();
 });
-window.addEventListener('ple:panelchange', () => { if (tab === 'calendar') calendar.render(); });
+window.addEventListener('ple:panelchange', () => {
+  // PC 앱: 할 일·가계부 탭을 보다가 달력 날짜를 누르면 [이 날] 탭으로
+  if (isDesk && tab !== 'calendar' && dayPanel.isPanelOpen()) return showDeskTab('calendar');
+  if (tab === 'calendar' || isDesk) calendar.render();
+});
 
 // 캘린더 패널에서 '할 일에서 열기 / 가계부에서 기록하기' → 그 화면의 그 날짜로
 window.addEventListener('ple:goto', e => {
@@ -487,6 +511,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+if (isDesk) mountDeskSide(showTab);
 showTab(tab);
 recordRecurring();
 // 할 일·가계부 담는 곳이 기본 계정이 아니면 알려 준다 (기록이 사라진 것처럼 오해하지 않게)

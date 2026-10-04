@@ -10,3 +10,7 @@ Desktop.ini
 
 # Claude 로컬 설정
 .claude/
+
+# PC 앱 (desktop/): 설치한 도구와 만든 exe는 올리지 않는다
+desktop/node_modules/
+desktop/dist/

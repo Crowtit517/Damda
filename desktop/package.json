@@ -1,0 +1,39 @@
+{
+  "name": "damda-pc",
+  "productName": "Damda",
+  "version": "1.0.0",
+  "description": "담다 PC 앱 (캘린더 + 할 일 + 가계부, 바탕화면 위젯)",
+  "main": "main.js",
+  "private": true,
+  "author": "Crowtit517",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "io.github.crowtit517.damda",
+    "productName": "Damda",
+    "files": [
+      "main.js",
+      "preload.js",
+      "widget.html",
+      "build/icon.png",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "portable",
+      "icon": "build/icon.png"
+    },
+    "portable": {
+      "artifactName": "Damda.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3"
+  }
+}

@@ -8,6 +8,7 @@ import { tasksOn } from '../taskRepeat.js';
 import { getSetting, setSetting } from '../settings.js';
 import { toast } from '../ui/toast.js';
 import * as gcal from '../sync/gcal.js';
+import { isDesk, openWidget } from '../desk.js';
 
 const el = document.getElementById('view-calendar');
 const picker = document.getElementById('monthPicker');
@@ -74,6 +75,7 @@ export function render() {
         </div>
       </div>
       <div class="cal-tools">
+        ${isDesk ? '<button type="button" class="pill-btn" data-act="widget" title="바탕화면 위젯으로 보기 (Ctrl+Shift+D: 숨기기/꺼내기)">위젯으로 보기</button>' : ''}
         ${isCurrentMonth ? '' : '<button type="button" class="pill-btn" data-act="today">오늘</button>'}
         <button type="button" class="money-toggle${showMoney ? ' on' : ''}" data-act="money" role="switch" aria-checked="${showMoney}" aria-label="캘린더에 가계부 금액 보기" title="가계부 금액 보기 켜기/끄기">
           <span class="money-icon" aria-hidden="true">💰</span><span class="switch${showMoney ? ' on' : ''}" aria-hidden="true"></span>
@@ -89,6 +91,7 @@ el.addEventListener('click', e => {
   if (act === 'prev') return moveMonth(-1);
   if (act === 'next') return moveMonth(1);
   if (act === 'today') return goToday();
+  if (act === 'widget') return openWidget();
   if (act === 'money') {
     const on = !getSetting('money');
     setSetting('money', on);

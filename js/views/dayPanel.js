@@ -1,6 +1,7 @@
 // 하루 통합 패널: 캘린더에서 날짜를 누르면 PC는 오른쪽, 모바일은 아래에서 스르륵 나온다.
 // 할 일은 체크만 하는 목록, 가계부는 요약만 보여주고 누르면 각 탭의 그 날짜로 넘어간다 (패널은 가볍게).
 import { store } from '../store.js';
+import { isDesk } from '../desk.js';
 import { openOverlay, closeOverlay, isOpen } from '../ui/overlay.js';
 import { removeWithUndo, toast } from '../ui/toast.js';
 import { dateNavHtml, bindDateNav } from '../parts/dateNav.js';
@@ -60,6 +61,8 @@ const notifyChange = () => window.dispatchEvent(new CustomEvent('ple:panelchange
 export function openDayPanel(k) {
   key = k;
   render();
+  // PC 앱: 오른쪽 구역의 [이 날] 탭으로 늘 붙어 있다 (메뉴를 열어도 닫히지 않게 겹치는 창 목록에 넣지 않는다)
+  if (isDesk) { el.hidden = false; el.classList.add('open'); notifyChange(); return; }
   if (!isOpen(el)) {
     el.querySelector('.panel-body').scrollTop = 0;
     openOverlay({ el, layer: 1, scrim: true, onClose: () => { key = null; notifyChange(); } });
@@ -67,7 +70,7 @@ export function openDayPanel(k) {
   notifyChange();
 }
 
-export const isPanelOpen = () => isOpen(el);
+export const isPanelOpen = () => (isDesk ? !el.hidden : isOpen(el));
 
 export function shiftDay(n) {
   if (key) openDayPanel(addDays(key, n));

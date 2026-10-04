@@ -1,0 +1,34 @@
+import fs from 'fs';
+const list = (await (await fetch('http://127.0.0.1:9334/json')).json()).filter(t => t.type === 'page');
+console.log('창:', list.map(t => t.url).join(' , '));
+const t = list.find(t => !t.url.includes('__damda'));
+const ws = new WebSocket(t.webSocketDebuggerUrl); await new Promise(r => ws.onopen = r);
+let id = 0; const wait = new Map(); ws.onmessage = m => { const d = JSON.parse(m.data); wait.get(d.id)?.(d); };
+const send = (method, params = {}) => new Promise(r => { const i = ++id; wait.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
+const ev = async e => { const r = (await send('Runtime.evaluate', { expression: e, returnByValue: true, awaitPromise: true })).result; if (r?.exceptionDetails) console.log('오류', r.exceptionDetails.exception?.description); return r?.result?.value; };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const ok = (n, c) => console.log(c ? '✅' : '❌', n);
+const out = process.argv[2] || 'pc';
+ok('PC 화면 켜짐 (html.desk-app)', await ev(`document.documentElement.classList.contains('desk-app')`));
+ok('브라우저 표시에 Electron 없음', !(await ev('navigator.userAgent')).includes('Electron'));
+ok('오른쪽 탭 3개', await ev(`[...document.querySelectorAll('.desk-tabs button')].map(b => b.textContent).join('|') === '이 날|할 일|가계부'`));
+ok('[위젯으로 보기] 버튼', await ev(`!!document.querySelector('.cal-tools [data-act="widget"]')`));
+ok('[이 날] 패널 열림', await ev(`!document.getElementById('dayPanel').hidden`));
+const r = await send('Page.captureScreenshot', { format: 'png' }); fs.writeFileSync(`${out}-day.png`, Buffer.from(r.result.data, 'base64'));
+await ev(`document.querySelector('.desk-tabs [data-screen="tasks"]').click()`); await sleep(500);
+ok('[할 일] 탭', await ev(`!document.getElementById('view-tasks').hidden && document.getElementById('dayPanel').hidden && !document.getElementById('view-calendar').hidden`));
+await ev(`document.querySelectorAll('#view-calendar .cell')[12].click()`); await sleep(400);
+ok('날짜 누르면 [이 날]로', await ev(`document.querySelector('.desk-tabs .on')?.dataset.screen === 'calendar' && !document.getElementById('dayPanel').hidden`));
+await ev(`document.getElementById('menuBtn').click()`); await sleep(400);
+ok('메뉴 열어도 [이 날] 유지', await ev(`!document.getElementById('dayPanel').hidden`));
+await ev(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`); await sleep(300);
+await ev(`document.querySelector('.cal-tools [data-act="widget"]').click()`); await sleep(2500);
+const wl = (await (await fetch('http://127.0.0.1:9334/json')).json()).filter(t => t.url.includes('__damda_widget'));
+ok('[위젯으로 보기]로 위젯 열림', wl.length === 1);
+if (wl[0]) {
+  const w = new WebSocket(wl[0].webSocketDebuggerUrl); await new Promise(r => w.onopen = r);
+  const v = await new Promise(res => { w.onmessage = m => res(JSON.parse(m.data).result?.result?.value); w.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression: `document.querySelectorAll('.month').length`, returnByValue: true } })); });
+  ok('위젯에 달력이 그려짐 (같은 저장소 읽기)', v === 15);
+  w.close();
+}
+ws.close();
