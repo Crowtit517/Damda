@@ -19,6 +19,7 @@ desktop/oauth.local.json
 
 # 갤럭시 앱 (mobile/): 설치한 도구·빌드 결과·서명 열쇠는 올리지 않는다
 mobile/node_modules/
+mobile/dist/
 *.keystore
 *.jks
 

@@ -2,14 +2,15 @@
 
 > 앱 기능 밖의 이야기를 모아 둔 문서: 배포, 비용, 수익화, 법·AI 관련, 개념 정리.
 > 기능·설계 결정은 PLAN.md와 docs/를 본다. 법률 내용은 일반적인 정리이며, 실제 판매 전에는 전문가(변호사·변리사) 확인이 필요하다.
-> 최종 수정: 2026-10-03
+> 최종 수정: 2026-10-05
 
 ## 1. 배포 계획 (지금: 무료)
 
 | 기기 | 받는 곳 | 비용 |
 |---|---|---|
-| PC | GitHub Pages 주소 → 크롬에서 "앱 설치" (PWA) | 무료 |
-| 갤럭시 | GitHub **Releases**에서 설치 파일(APK) 내려받아 설치 | 무료 |
+| 웹 | GitHub Pages 주소 (크롬에서 "앱 설치"도 가능) | 무료 |
+| PC | GitHub **Releases**의 `Damda-Setup.exe` (PC 앱 + 바탕화면 위젯) | 무료 |
+| 갤럭시 | GitHub **Releases**의 `Damda-Galaxy.apk` (정식 서명) | 무료 |
 | 동기화 | 각자의 구글 계정 (드라이브·캘린더). **우리가 운영하는 서버 없음** | 무료 |
 
 - 레포: https://github.com/Crowtit517/damdanote (공개, 10-04 첫 커밋. 10-04 Damda → damdanote 로 이름 변경)
@@ -78,12 +79,14 @@
 - 서명하지 않은 exe라 처음 실행 때 Windows가 "알 수 없는 게시자" 경고를 띄운다 → [추가 정보] → [실행]. 무료 범위에서는 그대로 둔다
 - 다른 사람에게는 설치 파일 하나만 주면 된다 (화면은 공개 사이트에서 받으므로, 사이트를 고치면 exe를 다시 만들지 않아도 최신)
 - 시작 화면: PC 앱은 `desktop/splash.html`, 폰(홈 화면 앱)은 `js/ui/bootSplash.js`. 처음 만든 시험판은 `test/splash-demo/`(`시작 화면 보기.bat`)
-- 시험: `test/pc_qa.mjs`(PC 전체 65개, 개발 모드에서), `test/mobile_splash.mjs`(폰 시작 화면), `test/web_regress.mjs`(폰·웹 화면이 그대로인지)
+- 시험: `test/pc_qa.mjs`(PC 전체 68개, 개발 모드에서), `test/mobile_splash.mjs`(폰 시작 화면), `test/web_regress.mjs`(폰·웹 화면이 그대로인지)
 - `test/`: 개발 중 쓴 시험 스크립트(가짜 구글 서버로 검증)·화면 사진·PC 시험판과 그 데이터. **이 PC에만 두고 git에는 올리지 않는다**(10-05). 앱은 쓰지 않는다
 
 ## 8. 갤럭시 앱 만들기·나눠 주기 (10-05)
 
-- 코드: `mobile/` (Capacitor 6). `cd mobile` → `npm install` → `npx cap sync android` → `cd android` → `gradlew assembleDebug` (JAVA_HOME = 안드로이드 스튜디오의 jbr) → `app/build/outputs/apk/debug/app-debug.apk`
-- 구글 로그인 설정(한 번, 사용자): 콘솔 → OAuth 클라이언트 ID → 유형 **Android** → 패키지 `io.github.crowtit517.damda` + 서명 SHA-1. 지금은 이 PC의 시험 서명 지문을 등록했다. 다른 사람에게 나눠 줄 APK는 **정식 서명 열쇠(keystore)**를 만들고 그 지문을 하나 더 등록한다. 열쇠와 비밀번호는 git에 넣지 않고 따로 백업(잃어버리면 앱을 업데이트할 수 없음)
+- 코드: `mobile/` (Capacitor 6). 시험용: `cd mobile` → `npm install` → `npx cap sync android` → `cd android` → `gradlew assembleDebug` (JAVA_HOME = 안드로이드 스튜디오의 jbr) → `app/build/outputs/apk/debug/app-debug.apk`
+- **정식(나눠 줄) APK**: `mobile/release.cmd` → `mobile/dist/Damda-Galaxy.apk`. 서명할 때 비밀번호를 물어본다. 처음 한 번만 `release.cmd key`로 서명 열쇠를 만든다(`%USERPROFILE%\damda-keys\damda-release.jks`, 레포 밖). **열쇠 파일과 비밀번호는 USB·개인 클라우드에 백업**(잃어버리면 같은 앱으로 업데이트할 수 없음). 안드로이드 부분을 고쳐 다시 낼 때는 `android/app/build.gradle`의 versionCode를 1 올린다
+- 구글 로그인 설정(한 번, 사용자): 콘솔 → OAuth 클라이언트 ID → 유형 **Android** → 패키지 `io.github.crowtit517.damda` + 서명 SHA-1. 시험 서명 지문(개발용)과 정식 서명 지문(나눠 주는 APK)을 각각 등록한다(Android 클라이언트 2개)
 - 설치: 시험할 땐 개발자 옵션 → USB 디버깅 + `adb install`. 나눠 줄 땐 APK 파일을 GitHub Releases에 올리고, 받는 사람은 내려받아 설치("출처를 알 수 없는 앱" 허용 한 번). 개발자 모드는 필요 없음
+- 시험 서명 앱에서 정식 서명 앱으로 바꿀 땐 서명이 달라 한 번 지우고 설치한다(기록은 구글 드라이브에서 다시 불러옴)
 - 처음 열 때 "알림 허용"을 묻는다. 정확한 알람은 캘린더 앱 용도라 자동 허용

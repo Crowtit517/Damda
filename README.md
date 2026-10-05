@@ -32,7 +32,8 @@
 | **로그인** | 약 1시간마다 자동 갱신 | 기본 브라우저에서 한 번 → **계속 유지** | 폰의 구글 계정 고르기 → **계속 유지** |
 
 > 설치 후 ☰ 메뉴 → **[구글 계정으로 연결]** 을 누르면 세 곳의 기록이 자동으로 맞춰집니다.
-> 지금은 구글 **테스트 모드**라 등록된 테스트 사용자만 로그인할 수 있습니다. 로그인 없이도 그 기기 안에서는 모두 쓸 수 있습니다.
+> 처음 연결할 때 구글이 **"확인되지 않은 앱"** 화면을 보여 줍니다(개인 앱이라 구글 심사를 받지 않았기 때문). **[고급] → [담다(으)로 이동]** 을 누르면 됩니다. 담다는 서버가 없고 기록을 어디에도 보내지 않습니다 → [개인정보처리방침](https://crowtit517.github.io/damdanote/privacy.html)
+> 로그인 없이도 그 기기 안에서는 모두 쓸 수 있습니다.
 
 ---
 
@@ -180,7 +181,7 @@ damdanote/
 |---|---|
 | 웹 | `python -m http.server 5500` → http://localhost:5500 (빌드 과정 없음) |
 | PC 앱 | `cd desktop` → `npm install` → `npm run dev` (개발) / `npm run build` → `dist/Damda-Setup.exe`. 구글 로그인에는 `desktop/oauth.local.json`(데스크톱 앱 클라이언트) 필요 |
-| 갤럭시 앱 | `cd mobile` → `npm install` → `npx cap sync android` → `cd android` → `gradlew assembleDebug`. 구글 콘솔에 Android 클라이언트(패키지 + 서명 SHA-1) 등록 |
+| 갤럭시 앱 | `cd mobile` → `npm install` → `npx cap sync android` → `cd android` → `gradlew assembleDebug`(시험용) · `mobile/release.cmd`(정식 서명 APK). 구글 콘솔에 Android 클라이언트(패키지 + 서명 SHA-1) 등록 |
 | 내 구글 프로젝트로 | `js/config.js`의 클라이언트 ID를 바꾸고 [docs/data-sync.md](docs/data-sync.md) 8장대로 설정 |
 
 | 문서 | 내용 |
